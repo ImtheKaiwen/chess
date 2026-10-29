@@ -689,7 +689,50 @@ export const App: React.FC = () => {
       to: movesToApply[movesToApply.length - 1].to
     });
     sound.playMove();
-    addToast('Hamle ileri alındı', 'info');
+    addToast(lang === 'en' ? 'Move redone' : 'Hamle ileri alındı', 'info');
+  };
+
+  // Handle Resign
+  const handleResign = () => {
+    if (status !== 'active' && status !== 'check') return;
+    const resigningColor = gameSettings.mode === 'ai' ? humanColor : currentTurn;
+    const opponentWinner: Color = resigningColor === 'white' ? 'black' : 'white';
+
+    sound.playDefeat();
+    setStatus('resigned');
+    setWinner(opponentWinner);
+    setShowGameOverModal(true);
+    finishGame(opponentWinner, `${resigningColor === 'white' ? 'Beyaz' : 'Siyah'} terk etti`);
+    addToast(lang === 'en' ? 'You resigned the game.' : 'Oyunu terk ettiniz.', 'info');
+  };
+
+  // Handle Offer Draw
+  const handleOfferDraw = () => {
+    if (status !== 'active' && status !== 'check') return;
+    sound.playMove();
+    setStatus('draw');
+    setWinner('draw');
+    setShowGameOverModal(true);
+    finishGame('draw', 'Karşılıklı berabere');
+    addToast(lang === 'en' ? 'Game ended in a draw.' : 'Oyun berabere sonuçlandı.', 'info');
+  };
+
+  // Copy FEN
+  const handleCopyFEN = async () => {
+    const fen = boardToFEN(board, currentTurn, enPassantTarget, moveHistory);
+    const success = await copyToClipboard(fen);
+    if (success) {
+      addToast(lang === 'en' ? 'FEN copied to clipboard' : 'FEN panoya kopyalandı', 'success');
+    }
+  };
+
+  // Copy PGN
+  const handleCopyPGN = async () => {
+    const pgn = movesToPGN(moveHistory);
+    const success = await copyToClipboard(pgn);
+    if (success) {
+      addToast(lang === 'en' ? 'PGN copied to clipboard' : 'PGN panoya kopyalandı', 'success');
+    }
   };
 
   // Keyboard Shortcuts Hook
@@ -729,53 +772,6 @@ export const App: React.FC = () => {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   });
-
-  // Resign & Draw
-  const handleResign = () => {
-    if (window.confirm('Oyunu terk etmek istediğinize emin misiniz?')) {
-      const resignWinner: Color = humanColor === 'white' ? 'black' : 'white';
-      setStatus('resigned');
-      setWinner(resignWinner);
-      setShowGameOverModal(true);
-      finishGame(resignWinner, 'Terk edildi');
-      sound.playDefeat();
-    }
-  };
-
-  const handleOfferDraw = () => {
-    if (gameSettings.mode === 'ai') {
-      if (Math.abs(evalScore) <= 0.6) {
-        setStatus('draw');
-        setWinner('draw');
-        setShowGameOverModal(true);
-        finishGame('draw', 'Stockfish beraberlik teklifinizi kabul etti');
-        sound.playMove();
-      } else {
-        addToast('Stockfish beraberlik teklifinizi reddetti.', 'warning');
-      }
-    } else {
-      if (window.confirm('Rakibiniz beraberlik teklifini kabul ediyor mu?')) {
-        setStatus('draw');
-        setWinner('draw');
-        setShowGameOverModal(true);
-        finishGame('draw', 'Karşılıklı beraberlik');
-        sound.playMove();
-      }
-    }
-  };
-
-  // Export FEN / PGN
-  const handleCopyFEN = () => {
-    const fen = boardToFEN(board, currentTurn, enPassantTarget, moveHistory);
-    copyToClipboard(fen);
-    addToast('FEN panoya kopyalandı', 'success');
-  };
-
-  const handleCopyPGN = () => {
-    const pgn = movesToPGN(moveHistory);
-    copyToClipboard(pgn);
-    addToast('PGN panoya kopyalandı', 'success');
-  };
 
   // Return to Lobby
   const handleReturnToMenu = () => {
@@ -827,6 +823,7 @@ export const App: React.FC = () => {
           onSelectMatch={handleSelectReviewMatch}
           onStartGame={handleStartGame}
           onRefreshHistory={() => setMatchHistory(getMatchHistory())}
+          onClearHistory={handleClearHistory}
         />
       )}
 
@@ -843,9 +840,9 @@ export const App: React.FC = () => {
                   name={
                     gameSettings.mode === 'ai' && topColor !== humanColor
                       ? `Stockfish AI (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
-                      : topColor === 'white'
-                      ? 'Beyaz Oyuncu'
-                      : 'Siyah Oyuncu'
+                      : bottomColor === 'white' && topColor === 'black'
+                      ? (lang === 'en' ? 'Black Player' : 'Siyah Oyuncu')
+                      : (lang === 'en' ? 'White Player' : 'Beyaz Oyuncu')
                   }
                   isTurn={currentTurn === topColor && status === 'active'}
                   isAI={gameSettings.mode === 'ai' && topColor !== humanColor}
@@ -876,6 +873,7 @@ export const App: React.FC = () => {
                     isKingInCheck={isChecked}
                     isFlipped={isFlipped}
                     themeMode={themeMode}
+                    lang={lang}
                     aiHints={aiHintArrows}
                     onSquareClick={handleSquareClick}
                   />
@@ -903,8 +901,8 @@ export const App: React.FC = () => {
                     gameSettings.mode === 'ai' && bottomColor !== humanColor
                       ? `Stockfish AI (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
                       : bottomColor === 'white'
-                      ? 'Beyaz Oyuncu'
-                      : 'Siyah Oyuncu'
+                      ? (lang === 'en' ? 'White Player' : 'Beyaz Oyuncu')
+                      : (lang === 'en' ? 'Black Player' : 'Siyah Oyuncu')
                   }
                   isTurn={currentTurn === bottomColor && status === 'active'}
                   isAI={gameSettings.mode === 'ai' && bottomColor !== humanColor}
@@ -932,6 +930,7 @@ export const App: React.FC = () => {
               onToggleTheme={handleToggleTheme}
               isMuted={isMuted}
               onToggleSound={handleToggleSound}
+              lang={lang}
               viewMode={viewMode}
               onToggleViewMode={() => setViewMode(vm => (vm === '2d' ? '3d' : '2d'))}
               canUndo={moveHistory.length > 0 && !isAiThinking}

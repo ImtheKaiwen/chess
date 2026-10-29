@@ -65,6 +65,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   const [userHighlights, setUserHighlights] = useState<Position[]>([]);
   const [rightClickStart, setRightClickStart] = useState<Position | null>(null);
   const [dragPreview, setDragPreview] = useState<BoardArrow | null>(null);
+  const [draggedSquare, setDraggedSquare] = useState<Position | null>(null);
 
   // Rendering rows & cols based on board flip
   const rows = isFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
@@ -275,6 +276,19 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                   if (userHighlights.length > 0) setUserHighlights([]);
                   onSquareClick(r, c);
                 }}
+                onDragOver={e => {
+                  e.preventDefault();
+                  e.dataTransfer.dropEffect = 'move';
+                }}
+                onDrop={e => {
+                  e.preventDefault();
+                  if (draggedSquare) {
+                    if (draggedSquare.row !== r || draggedSquare.col !== c) {
+                      onSquareClick(r, c);
+                    }
+                    setDraggedSquare(null);
+                  }
+                }}
                 data-row={r}
                 data-col={c}
               >
@@ -309,12 +323,24 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                   </div>
                 )}
 
-                {/* Chess piece with smooth sliding animation */}
+                {/* Chess piece with smooth sliding animation and drag-and-drop */}
                 {piece && (
                   <div
                     key={`${piece.color}-${piece.type}-${r}-${c}`}
-                    className={`piece-container ${isSliding ? 'is-sliding' : ''}`}
+                    className={`piece-container ${isSliding ? 'is-sliding' : ''} ${
+                      draggedSquare && draggedSquare.row === r && draggedSquare.col === c ? 'is-dragging' : ''
+                    }`}
                     style={slideStyle}
+                    draggable={piece.color === currentTurn}
+                    onDragStart={e => {
+                      setDraggedSquare({ row: r, col: c });
+                      onSquareClick(r, c);
+                      e.dataTransfer.effectAllowed = 'move';
+                      e.dataTransfer.setData('text/plain', JSON.stringify({ row: r, col: c }));
+                    }}
+                    onDragEnd={() => {
+                      setDraggedSquare(null);
+                    }}
                   >
                     <PieceIcon color={piece.color} type={piece.type} />
                   </div>

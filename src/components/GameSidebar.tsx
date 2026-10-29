@@ -18,6 +18,8 @@ import {
   Box,
   Sparkles
 } from 'lucide-react';
+import type { Language } from '../utils/i18n';
+import { translations } from '../utils/i18n';
 
 interface GameSidebarProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ interface GameSidebarProps {
   onToggleTheme: () => void;
   isMuted: boolean;
   onToggleSound: () => void;
+  lang?: Language;
   viewMode: '2d' | '3d';
   onToggleViewMode: () => void;
   canUndo: boolean;
@@ -54,6 +57,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
   onToggleTheme,
   isMuted,
   onToggleSound,
+  lang = 'tr',
   viewMode,
   onToggleViewMode,
   canUndo,
@@ -74,6 +78,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
   aiAssistEnabled = false,
   onToggleAiAssist
 }) => {
+  const t = translations[lang] || translations.tr;
   const containerRef = useRef<HTMLDivElement>(null);
   const logoSrc = themeMode === 'light' ? './kaiwen-logo-dark.png' : './kaiwen-logo-white.png';
 
@@ -111,7 +116,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className="dock-item-btn dock-btn-expand"
             onClick={onToggleOpen}
-            data-tooltip="Hamle Listesini Aç"
+            data-tooltip={lang === 'en' ? 'Open Move Log' : 'Hamle Listesini Aç'}
           >
             <ScrollText size={16} />
             {moveHistory.length > 0 && (
@@ -127,7 +132,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             className="dock-item-btn"
             onClick={onUndo}
             disabled={!canUndo}
-            data-tooltip="Geri Al (Ctrl+Z)"
+            data-tooltip={`${t.undo} (Ctrl+Z)`}
           >
             <RotateCcw size={15} />
           </button>
@@ -137,7 +142,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             className="dock-item-btn"
             onClick={onRedo}
             disabled={!canRedo}
-            data-tooltip="İleri Al (Ctrl+Y)"
+            data-tooltip={`${t.redo} (Ctrl+Y)`}
           >
             <RotateCw size={15} />
           </button>
@@ -146,7 +151,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className="dock-item-btn"
             onClick={onFlipBoard}
-            data-tooltip="Tahtayı Çevir (F)"
+            data-tooltip={`${t.flip} (F)`}
           >
             <ArrowUpDown size={15} />
           </button>
@@ -155,7 +160,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className={`dock-item-btn ${viewMode === '3d' ? 'active' : ''}`}
             onClick={onToggleViewMode}
-            data-tooltip={viewMode === '3d' ? '2D Tahtaya Geç' : '3D Three.js Sahnesine Geç'}
+            data-tooltip={viewMode === '3d' ? (lang === 'en' ? 'Switch to 2D Board' : '2D Tahtaya Geç') : (lang === 'en' ? 'Switch to 3D Scene' : '3D Three.js Sahnesine Geç')}
           >
             <Box size={15} />
           </button>
@@ -165,7 +170,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
               type="button"
               className={`dock-item-btn ${aiAssistEnabled ? 'active' : ''}`}
               onClick={onToggleAiAssist}
-              data-tooltip={aiAssistEnabled ? 'Yapay Zeka Hamle Desteğini Kapat' : 'Yapay Zeka Hamle Desteğini Aç'}
+              data-tooltip={aiAssistEnabled ? (lang === 'en' ? 'Disable AI Move Assistance' : 'Yapay Zeka Hamle Desteğini Kapat') : (lang === 'en' ? 'Enable AI Move Assistance' : 'Yapay Zeka Hamle Desteğini Aç')}
             >
               <Sparkles size={15} />
             </button>
@@ -177,7 +182,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className="dock-item-btn"
             onClick={onToggleTheme}
-            data-tooltip={themeMode === 'light' ? 'Koyu Tema' : 'Açık Tema'}
+            data-tooltip={themeMode === 'light' ? t.themeDark : t.themeLight}
           >
             {themeMode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
           </button>
@@ -186,7 +191,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className={`dock-item-btn ${isMuted ? '' : 'active'}`}
             onClick={onToggleSound}
-            data-tooltip={isMuted ? 'Sesi Aç' : 'Sesi Kapat'}
+            data-tooltip={isMuted ? t.soundOn : t.soundOff}
           >
             {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
           </button>
@@ -195,7 +200,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className="dock-item-btn"
             onClick={onReturnToMenu}
-            data-tooltip="Ana Menüye Dön"
+            data-tooltip={t.returnToMenu}
           >
             <Home size={15} />
           </button>
@@ -225,17 +230,17 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
               type="button"
               className="btn-drawer-header"
               onClick={onReturnToMenu}
-              title="Ana Menüye Dön"
+              title={t.returnToMenu}
             >
               <Home size={14} />
-              <span>Menü</span>
+              <span>{t.menu}</span>
             </button>
 
             <button
               type="button"
               className="btn-drawer-collapse"
               onClick={onToggleOpen}
-              title="Paneli Gizle"
+              title={lang === 'en' ? 'Hide Panel' : 'Paneli Gizle'}
             >
               <ChevronRight size={16} />
             </button>
@@ -249,10 +254,10 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             className="btn-drawer-tool"
             onClick={onUndo}
             disabled={!canUndo}
-            title="Hamle Geri Al (Ctrl+Z)"
+            title={`${t.undo} (Ctrl+Z)`}
           >
             <RotateCcw size={13} />
-            <span>Geri</span>
+            <span>{t.undo}</span>
           </button>
 
           <button
@@ -260,27 +265,27 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             className="btn-drawer-tool"
             onClick={onRedo}
             disabled={!canRedo}
-            title="Hamle İleri Al (Ctrl+Y)"
+            title={`${t.redo} (Ctrl+Y)`}
           >
             <RotateCw size={13} />
-            <span>İleri</span>
+            <span>{t.redo}</span>
           </button>
 
           <button
             type="button"
             className="btn-drawer-tool"
             onClick={onFlipBoard}
-            title="Tahtayı Çevir (F)"
+            title={`${t.flip} (F)`}
           >
             <ArrowUpDown size={13} />
-            <span>Çevir</span>
+            <span>{t.flip}</span>
           </button>
 
           <button
             type="button"
             className={`btn-drawer-tool ${viewMode === '3d' ? 'active' : ''}`}
             onClick={onToggleViewMode}
-            title={viewMode === '3d' ? '2D Moduna Geç' : '3D Three.js Sahnesine Geç'}
+            title={viewMode === '3d' ? (lang === 'en' ? 'Switch to 2D' : '2D Moduna Geç') : (lang === 'en' ? 'Switch to 3D' : '3D Three.js Sahnesine Geç')}
           >
             <Box size={13} />
             <span>{viewMode === '3d' ? '3D' : '2D'}</span>
@@ -291,7 +296,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
               type="button"
               className={`btn-drawer-tool ${aiAssistEnabled ? 'active' : ''}`}
               onClick={onToggleAiAssist}
-              title={aiAssistEnabled ? 'AI Hamle Desteğini Kapat' : 'AI Hamle Desteğini Aç'}
+              title={aiAssistEnabled ? (lang === 'en' ? 'Disable AI Assist' : 'AI Hamle Desteğini Kapat') : (lang === 'en' ? 'Enable AI Assist' : 'AI Hamle Desteğini Aç')}
             >
               <Sparkles size={13} />
               <span>AI</span>
@@ -302,7 +307,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className="btn-drawer-tool"
             onClick={onToggleTheme}
-            title={themeMode === 'light' ? 'Koyu Tema' : 'Açık Tema'}
+            title={themeMode === 'light' ? t.themeDark : t.themeLight}
           >
             {themeMode === 'light' ? <Moon size={13} /> : <Sun size={13} />}
           </button>
@@ -311,7 +316,7 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             type="button"
             className={`btn-drawer-tool ${isMuted ? '' : 'active'}`}
             onClick={onToggleSound}
-            title={isMuted ? 'Sesi Aç (M)' : 'Sesi Kapat (M)'}
+            title={isMuted ? t.soundOn : t.soundOff}
           >
             {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
           </button>
@@ -320,14 +325,14 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
         {/* Integrated Evaluation Box */}
         <div className="drawer-eval-card">
           <div className="eval-row-meta">
-            <span className="eval-label">Pozisyon Analizi</span>
+            <span className="eval-label">{lang === 'en' ? 'Position Evaluation' : 'Pozisyon Analizi'}</span>
             <div className="eval-meta-right">
               {aiDifficulty && (
                 <span className="eval-ai-pill">Stockfish ({aiDifficulty})</span>
               )}
               {isAiThinking ? (
                 <span className="eval-thinking-tag">
-                  <Loader2 size={11} className="spin-icon" /> Düşünüyor
+                  <Loader2 size={11} className="spin-icon" /> {t.calculating}
                 </span>
               ) : (
                 <span className="eval-score-num">{scoreFormatted}</span>
@@ -344,14 +349,14 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
         <div className="drawer-history-section">
           <div className="history-sub-header">
             <span className="history-col-num">#</span>
-            <span className="history-col-turn">Beyaz</span>
-            <span className="history-col-turn">Siyah</span>
+            <span className="history-col-turn">{t.white}</span>
+            <span className="history-col-turn">{t.black}</span>
           </div>
 
           <div ref={containerRef} className="drawer-moves-scroll">
             {rows.length === 0 ? (
               <div className="empty-moves-notice">
-                <span>Oyun başladı. İlk hamlenizi yapın.</span>
+                <span>{lang === 'en' ? 'Game started. Make your first move.' : 'Oyun başladı. İlk hamlenizi yapın.'}</span>
               </div>
             ) : (
               rows.map(row => (
@@ -372,19 +377,19 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
               type="button"
               className="btn-export-code"
               onClick={onCopyFEN}
-              title="Mevcut FEN Notasyonunu Kopyala"
+              title={lang === 'en' ? 'Copy Current FEN' : 'Mevcut FEN Notasyonunu Kopyala'}
             >
               <Copy size={12} />
-              <span>FEN</span>
+              <span>{t.copyFEN}</span>
             </button>
             <button
               type="button"
               className="btn-export-code"
               onClick={onCopyPGN}
-              title="Tüm PGN Hamle Notasyonunu Kopyala"
+              title={lang === 'en' ? 'Copy Complete PGN' : 'Tüm PGN Hamle Notasyonunu Kopyala'}
             >
               <Copy size={12} />
-              <span>PGN</span>
+              <span>{t.copyPGN}</span>
             </button>
           </div>
 
@@ -394,20 +399,20 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
                 type="button"
                 className="btn-game-decision draw"
                 onClick={onOfferDraw}
-                title="Beraberlik Teklif Et"
+                title={lang === 'en' ? 'Offer Draw' : 'Beraberlik Teklif Et'}
               >
                 <Handshake size={13} />
-                <span>Berabere</span>
+                <span>{t.draw}</span>
               </button>
 
               <button
                 type="button"
                 className="btn-game-decision resign"
                 onClick={onResign}
-                title="Oyunu Terk Et"
+                title={lang === 'en' ? 'Resign Match' : 'Oyunu Terk Et'}
               >
                 <Flag size={13} />
-                <span>Terk Et</span>
+                <span>{t.resign}</span>
               </button>
             </div>
           )}

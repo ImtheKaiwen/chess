@@ -146,7 +146,6 @@
   50% { transform: scale(0.96); opacity: 1; }
 }
 
-/* Smooth Piece Animations */
 .piece-container {
   position: relative;
   width: 82%;
@@ -159,6 +158,21 @@
   transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
   pointer-events: none;
   animation: piece-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.piece-container[draggable="true"] {
+  pointer-events: auto;
+  cursor: grab;
+}
+
+.piece-container[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.piece-container.is-dragging {
+  opacity: 0.35;
+  transform: scale(1.1);
+  filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.35));
 }
 
 @keyframes piece-appear {

@@ -164,7 +164,7 @@ export function boardToFEN(
 
 export function movesToPGN(moveHistory: MoveRecord[]): string {
   const date = new Date().toISOString().split('T')[0];
-  let pgn = `[Event "Casual Game"]\n[Site "ChessGPT"]\n[Date "${date}"]\n[White "White"]\n[Black "Black"]\n\n`;
+  let pgn = `[Event "Casual Game"]\n[Site "KAIWEN CHESS"]\n[Date "${date}"]\n[White "White"]\n[Black "Black"]\n\n`;
 
   for (let i = 0; i < moveHistory.length; i += 2) {
     const moveNum = Math.floor(i / 2) + 1;

@@ -53,6 +53,7 @@ interface StartScreenProps {
   onSelectMatch?: (match: MatchHistoryItem) => void;
   onStartGame: (settings: GameSettings) => void;
   onRefreshHistory: () => void;
+  onClearHistory?: () => void;
 }
 
 export const StartScreen: React.FC<StartScreenProps> = ({
@@ -69,7 +70,8 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onOpenHistory,
   onSelectMatch,
   onStartGame,
-  onRefreshHistory
+  onRefreshHistory,
+  onClearHistory
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [step, setStep] = useState<number>(1);
@@ -169,8 +171,12 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   <button
                     type="button"
                     className="btn-icon-subtle"
-                    onClick={onRefreshHistory}
-                    data-tooltip="Geçmişi Temizle"
+                    onClick={() => {
+                      if (onClearHistory) onClearHistory();
+                      else onRefreshHistory();
+                    }}
+                    data-tooltip={t.clearHistory}
+                    aria-label={t.clearHistory}
                   >
                     <Trash2 size={13} />
                   </button>

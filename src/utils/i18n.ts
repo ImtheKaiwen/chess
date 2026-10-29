@@ -97,7 +97,12 @@ export const translations = {
     whiteTurn: 'Beyazın Sırası',
     blackTurn: 'Siyahın Sırası',
     whitePlayer: 'Beyaz Oyuncu',
-    blackPlayer: 'Siyah Oyuncu'
+    blackPlayer: 'Siyah Oyuncu',
+    cam3D: 'Standart 3D Açı',
+    camTop: 'Kuşbakışı (2.5D)',
+    camAngled: 'Çapraz Açı',
+    resignedGame: 'Oyunu terk ettiniz.',
+    drawAgreedToast: 'Oyun berabere sonuçlandı.'
   },
   en: {
     brand: 'KAIWEN CHESS',
@@ -195,7 +200,12 @@ export const translations = {
     whiteTurn: 'White to move',
     blackTurn: 'Black to move',
     whitePlayer: 'White Player',
-    blackPlayer: 'Black Player'
+    blackPlayer: 'Black Player',
+    cam3D: '3D Standard Angle',
+    camTop: 'Top-Down View (2.5D)',
+    camAngled: 'Angled View',
+    resignedGame: 'You resigned the game.',
+    drawAgreedToast: 'Game ended in a draw.'
   }
 };
 

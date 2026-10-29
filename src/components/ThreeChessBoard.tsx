@@ -3,6 +3,8 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 import type { Board, Color, Position, PieceType } from '../engine/types';
 import { RotateCw, Eye, Maximize2 } from 'lucide-react';
+import type { Language } from '../utils/i18n';
+import { translations } from '../utils/i18n';
 
 interface ThreeChessBoardProps {
   board: Board;
@@ -13,6 +15,7 @@ interface ThreeChessBoardProps {
   isKingInCheck: boolean;
   isFlipped: boolean;
   themeMode: 'light' | 'dark';
+  lang?: Language;
   aiHints?: { from: Position; to: Position; color?: string }[];
   onSquareClick: (row: number, col: number) => void;
 }
@@ -207,9 +210,11 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
   isKingInCheck,
   isFlipped,
   themeMode,
+  lang = 'tr',
   aiHints = [],
   onSquareClick
 }) => {
+  const t = translations[lang] || translations.tr;
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -653,34 +658,37 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
         onClick={handleCanvasClick}
       />
 
-      {/* 3D Camera Controls Floating Pill */}
+      {/* 3D Camera Controls Floating Dock */}
       <div className="three-camera-controls">
         <button
           type="button"
           className={`three-btn-cam ${cameraAngle === 'perspective' ? 'active' : ''}`}
           onClick={() => handleSetCamera('perspective')}
-          title="Standart Açı"
+          data-tooltip={t.cam3D}
+          aria-label={t.cam3D}
         >
-          <Eye size={13} />
+          <Eye size={15} />
           <span>3D</span>
         </button>
         <button
           type="button"
           className={`three-btn-cam ${cameraAngle === 'top' ? 'active' : ''}`}
           onClick={() => handleSetCamera('top')}
-          title="Kuşbakışı (2.5D)"
+          data-tooltip={t.camTop}
+          aria-label={t.camTop}
         >
-          <Maximize2 size={13} />
-          <span>Üst</span>
+          <Maximize2 size={15} />
+          <span>{lang === 'en' ? 'Top' : 'Üst'}</span>
         </button>
         <button
           type="button"
           className={`three-btn-cam ${cameraAngle === 'angled' ? 'active' : ''}`}
           onClick={() => handleSetCamera('angled')}
-          title="Çapraz Açı"
+          data-tooltip={t.camAngled}
+          aria-label={t.camAngled}
         >
-          <RotateCw size={13} />
-          <span>Çapraz</span>
+          <RotateCw size={15} />
+          <span>{lang === 'en' ? 'Angle' : 'Çapraz'}</span>
         </button>
       </div>
     </div>
