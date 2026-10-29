@@ -8,6 +8,7 @@ interface MatchHistoryModalProps {
   onClose: () => void;
   history: MatchHistoryItem[];
   onRefresh: () => void;
+  onClear?: () => void;
   onSelectMatch?: (match: MatchHistoryItem) => void;
 }
 
@@ -16,13 +17,16 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
   onClose,
   history,
   onRefresh,
+  onClear,
   onSelectMatch
 }) => {
   if (!isOpen) return null;
 
   const handleClear = () => {
-    if (window.confirm('Tüm maç geçmişini silmek istediğinize emin misiniz?')) {
-      clearMatchHistory();
+    clearMatchHistory();
+    if (onClear) {
+      onClear();
+    } else {
       onRefresh();
     }
   };

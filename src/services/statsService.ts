@@ -104,6 +104,7 @@ export function saveMatchRecord(match: Omit<MatchHistoryItem, 'id' | 'date'>): M
 export function clearMatchHistory(): void {
   try {
     localStorage.removeItem(HISTORY_KEY);
+    localStorage.setItem(HISTORY_KEY, '[]');
   } catch {
     // ignore
   }

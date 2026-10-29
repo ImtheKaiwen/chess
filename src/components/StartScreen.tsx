@@ -15,6 +15,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   History,
+  Trash2,
   Settings,
   ChevronRight,
   ChevronLeft,
@@ -68,7 +69,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onOpenHistory,
   onSelectMatch,
   onStartGame,
-  onRefreshHistory: _onRefreshHistory
+  onRefreshHistory
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [step, setStep] = useState<number>(1);
@@ -164,6 +165,16 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   <History size={14} />
                   <span>{t.matchHistory}</span>
                 </div>
+                {matchHistory.length > 0 && (
+                  <button
+                    type="button"
+                    className="btn-icon-subtle"
+                    onClick={onRefreshHistory}
+                    data-tooltip="Geçmişi Temizle"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                )}
               </div>
 
               <div className="history-items-scroll">

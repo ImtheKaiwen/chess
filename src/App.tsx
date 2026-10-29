@@ -15,7 +15,8 @@ import {
   getPlayerStats,
   recordGameResult,
   getMatchHistory,
-  saveMatchRecord
+  saveMatchRecord,
+  clearMatchHistory
 } from './services/statsService';
 import type { PlayerStats, MatchHistoryItem } from './services/statsService';
 import { getStoredLanguage, setStoredLanguage } from './utils/i18n';
@@ -235,6 +236,13 @@ export const App: React.FC = () => {
   const handleToggleSound = () => {
     const muted = sound.toggleMute();
     setIsMuted(muted);
+  };
+
+  // Clear Match History
+  const handleClearHistory = () => {
+    clearMatchHistory();
+    setMatchHistory([]);
+    addToast('Maç geçmişi başarıyla temizlendi', 'success');
   };
 
   // Start a New Game
@@ -926,6 +934,7 @@ export const App: React.FC = () => {
         onClose={() => setShowHistoryModal(false)}
         history={matchHistory}
         onRefresh={() => setMatchHistory(getMatchHistory())}
+        onClear={handleClearHistory}
         onSelectMatch={handleSelectReviewMatch}
       />
 
