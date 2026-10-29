@@ -31,7 +31,7 @@ export interface MoveRecord {
   san: string; // Standard Algebraic Notation (e.g. "e4", "Nf3+", "O-O")
 }
 
-export type GameStatus = 'active' | 'check' | 'checkmate' | 'stalemate' | 'resigned' | 'draw';
+export type GameStatus = 'active' | 'check' | 'checkmate' | 'stalemate' | 'resigned' | 'timeout' | 'draw';
 
 export interface GameState {
   board: Board;

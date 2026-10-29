@@ -1,7 +1,7 @@
 import React, { useEffect } from 'react';
 import confetti from 'canvas-confetti';
 import type { Color, GameStatus } from '../engine/types';
-import { Trophy, RefreshCw, Eye } from 'lucide-react';
+import { Trophy, RefreshCw, Eye, Scale, Handshake, Flag, Clock, ShieldAlert } from 'lucide-react';
 import { formatTime } from '../utils/helpers';
 import type { Language } from '../utils/i18n';
 import { translations } from '../utils/i18n';
@@ -9,6 +9,7 @@ import { translations } from '../utils/i18n';
 interface GameOverModalProps {
   status: GameStatus;
   winner: Color | 'draw' | null;
+  reason?: string;
   totalMoves: number;
   gameDuration: number;
   whiteCapturedCount: number;
@@ -22,6 +23,7 @@ interface GameOverModalProps {
 export const GameOverModal: React.FC<GameOverModalProps> = ({
   status,
   winner,
+  reason,
   totalMoves,
   gameDuration,
   whiteCapturedCount,
@@ -36,72 +38,103 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   useEffect(() => {
     if (status === 'checkmate') {
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 85,
+        spread: 75,
         origin: { y: 0.6 }
       });
     }
   }, [status]);
 
+  const winnerName =
+    winner === 'white'
+      ? lang === 'en'
+        ? 'White'
+        : 'Beyaz'
+      : winner === 'black'
+      ? lang === 'en'
+        ? 'Black'
+        : 'Siyah'
+      : '';
+
+  // Determine modal theme, icon, badge, title and detailed description
+  let icon = <Trophy size={32} />;
+  let badgeText = lang === 'en' ? 'Game Over' : 'Oyun Bitti';
+  let badgeClass = 'badge-neutral';
   let title = lang === 'en' ? 'Game Over' : 'Oyun Bitti';
   let desc = lang === 'en' ? 'Match concluded.' : 'Müsabaka tamamlandı.';
 
   if (status === 'checkmate') {
-    const winnerName =
-      winner === 'white'
-        ? lang === 'en'
-          ? 'White'
-          : 'Beyaz'
-        : lang === 'en'
-        ? 'Black'
-        : 'Siyah';
-    title =
-      lang === 'en'
-        ? `Checkmate! ${winnerName} Won! 👑`
-        : `Şah Mat! ${winnerName} Kazandı! 👑`;
+    icon = <Trophy size={32} className="icon-gold" />;
+    badgeText = lang === 'en' ? 'Checkmate' : 'Şah Mat';
+    badgeClass = 'badge-win';
+    title = lang === 'en' ? `Checkmate! ${winnerName} Won! 👑` : `Şah Mat! ${winnerName} Kazandı! 👑`;
     desc =
       lang === 'en'
-        ? `King cornered through brilliant tactics and checkmated in ${totalMoves} moves.`
-        : `Mükemmel bir taktikle rakip şah sıkıştırıldı ve ${totalMoves} hamlede mat edildi.`;
-  } else if (status === 'stalemate') {
-    title = lang === 'en' ? 'Stalemate! Draw' : 'Pat! Oyun Berabere';
+        ? `The king was cornered through brilliant tactics and checkmated in ${totalMoves} moves.`
+        : `Rakip şah mükemmel bir taktikle sıkıştırıldı ve ${totalMoves} hamlede şah mat edildi.`;
+  } else if (status === 'stalemate' || reason?.toLowerCase().includes('pat') || reason?.toLowerCase().includes('stalemate')) {
+    icon = <ShieldAlert size={32} className="icon-stalemate" />;
+    badgeText = lang === 'en' ? 'Stalemate · No Legal Moves' : 'PAT · Hamle Kalmadı';
+    badgeClass = 'badge-draw';
+    title = lang === 'en' ? 'Stalemate! Game is a Draw ⚖️' : 'Pat Oldu! Oyun Berabere ⚖️';
     desc =
       lang === 'en'
-        ? 'The active player has no legal moves and king is not in check.'
-        : 'Sırası gelen oyuncunun yasal bir hamlesi yok ve şah tehdit altında değil.';
-  } else if (status === 'resigned') {
-    const winnerName =
-      winner === 'white'
-        ? lang === 'en'
-          ? 'White'
-          : 'Beyaz'
-        : lang === 'en'
-        ? 'Black'
-        : 'Siyah';
-    title =
-      lang === 'en'
-        ? `${winnerName} Won by Resignation`
-        : `Terk Nedeniyle ${winnerName} Kazandı`;
-    desc = lang === 'en' ? 'Opponent resigned.' : 'Rakip oyuncu oyunu terk etti.';
-  } else if (status === 'draw') {
-    title = lang === 'en' ? 'Mutual Draw' : 'Karşılıklı Beraberlik';
+        ? 'The king is NOT in check, but the player has no legal moves remaining. Under chess rules, this is a Stalemate (Draw).'
+        : 'Şah doğrudan tehdit altında değil; ancak kaçacak ya da oynanabilecek hiçbir yasal hamle kalmadığı için oyun kurallar gereği PAT (Beraberlik) ilan edildi.';
+  } else if (reason?.toLowerCase().includes('yetersiz') || reason?.toLowerCase().includes('insufficient')) {
+    icon = <Scale size={32} className="icon-draw" />;
+    badgeText = lang === 'en' ? 'Insufficient Material' : 'Yetersiz Taş';
+    badgeClass = 'badge-draw';
+    title = lang === 'en' ? 'Draw by Insufficient Material 🤝' : 'Yetersiz Taş! Oyun Berabere 🤝';
     desc =
       lang === 'en'
-        ? 'Players agreed to a mutual draw.'
-        : 'Oyuncular karşılıklı olarak beraberlikte anlaştı.';
+        ? 'Neither player has sufficient pieces remaining to deliver checkmate (e.g. King vs King). The game is drawn.'
+        : 'Tahtadaki mevcut taşlar mat yapmaya yetersizdir (örneğin sadece şahlar kaldı). Oyun kural gereği berabere tamamlandı.';
+  } else if (status === 'resigned' || reason?.toLowerCase().includes('terk') || reason?.toLowerCase().includes('resign')) {
+    icon = <Flag size={32} className="icon-resign" />;
+    badgeText = lang === 'en' ? 'Resignation' : 'Terk Edildi';
+    badgeClass = 'badge-resign';
+    title = lang === 'en' ? `${winnerName} Won by Resignation` : `Terk Nedeniyle ${winnerName} Kazandı`;
+    desc =
+      lang === 'en'
+        ? 'The game ended because the opponent resigned.'
+        : 'Rakip oyuncu oyunu terk ettiği için karşılaşma sona erdi.';
+  } else if (status === 'timeout' || reason?.toLowerCase().includes('süre') || reason?.toLowerCase().includes('time')) {
+    icon = <Clock size={32} className="icon-timeout" />;
+    badgeText = lang === 'en' ? 'Time Out' : 'Süre Bitti';
+    badgeClass = 'badge-timeout';
+    title = lang === 'en' ? `${winnerName} Won on Time ⏱️` : `${winnerName} Süreden Kazandı ⏱️`;
+    desc =
+      lang === 'en'
+        ? 'Match ended because time ran out.'
+        : 'Rakip oyuncunun süresi tükendiği için oyun tamamlandı.';
+  } else {
+    // Mutual draw
+    icon = <Handshake size={32} className="icon-draw" />;
+    badgeText = lang === 'en' ? 'Mutual Draw' : 'Karşılıklı Beraberlik';
+    badgeClass = 'badge-draw';
+    title = lang === 'en' ? 'Game Drawn by Agreement 🤝' : 'Karşılıklı Anlaşma ile Berabere 🤝';
+    desc =
+      lang === 'en'
+        ? 'Both players agreed to a mutual draw.'
+        : 'Her iki taraf da beraberlik teklifini kabul etti.';
   }
 
   return (
-    <div className="modal-backdrop">
+    <div className="modal-backdrop gameover-backdrop" role="dialog" aria-modal="true">
       <div className="modal-card gameover-modal-card">
-        <div className="modal-header-icon">
-          <Trophy size={28} />
+        <div className={`modal-header-icon ${badgeClass}`}>
+          {icon}
         </div>
 
-        <h2 className="modal-title">{title}</h2>
-        <p className="modal-desc">{desc}</p>
+        <div className="gameover-badge-pill">
+          <span className={`gameover-badge ${badgeClass}`}>{badgeText}</span>
+        </div>
 
-        <div className="stats-grid">
+        <h2 className="modal-title gameover-title">{title}</h2>
+        <p className="modal-desc gameover-desc">{desc}</p>
+
+        <div className="stats-grid gameover-stats-grid">
           <div className="stat-item">
             <span className="stat-label">{t.totalMovesStat}</span>
             <span className="stat-val">{totalMoves}</span>
@@ -123,13 +156,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
           </div>
         </div>
 
-        <div className="modal-actions">
-          <button className="btn-primary" onClick={onNewGame}>
+        <div className="modal-actions gameover-actions">
+          <button type="button" className="btn-primary" onClick={onNewGame}>
             <RefreshCw size={16} />
             <span>{t.playAgain}</span>
           </button>
 
-          <button className="btn-secondary" onClick={onInspect || onClose}>
+          <button type="button" className="btn-secondary" onClick={onInspect || onClose}>
             <Eye size={16} />
             <span>{t.reviewBoard}</span>
           </button>

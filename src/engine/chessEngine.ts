@@ -257,6 +257,34 @@ export function isStalemate(board: Board, color: Color, enPassantTarget: Positio
   return !isKingInCheck(board, color) && getAllLegalMoves(board, color, enPassantTarget).length === 0;
 }
 
+export function isInsufficientMaterial(board: Board): boolean {
+  const pieces: Piece[] = [];
+  for (let r = 0; r < 8; r++) {
+    for (let c = 0; c < 8; c++) {
+      const p = board[r][c];
+      if (p) pieces.push(p);
+    }
+  }
+
+  // Only Kings (King vs King)
+  if (pieces.length === 2) return true;
+
+  // King + Bishop vs King or King + Knight vs King
+  if (pieces.length === 3) {
+    return pieces.some(p => p.type === 'bishop' || p.type === 'knight');
+  }
+
+  // King + Bishop vs King + Bishop
+  if (pieces.length === 4) {
+    const nonKings = pieces.filter(p => p.type !== 'king');
+    if (nonKings.length === 2 && nonKings[0].type === 'bishop' && nonKings[1].type === 'bishop') {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 export function generateSAN(
   piece: Piece,
   from: Position,

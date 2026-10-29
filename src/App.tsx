@@ -6,7 +6,8 @@ import {
   getLegalMoves,
   isCheckmate,
   isKingInCheck,
-  isStalemate
+  isStalemate,
+  isInsufficientMaterial
 } from './engine/chessEngine';
 import { calculateCaptured, boardToFEN, movesToPGN, copyToClipboard } from './utils/helpers';
 import { sound } from './utils/sound';
@@ -107,6 +108,7 @@ export const App: React.FC = () => {
   // Status & Modals
   const [status, setStatus] = useState<GameStatus>('active');
   const [winner, setWinner] = useState<Color | 'draw' | null>(null);
+  const [gameOverReason, setGameOverReason] = useState<string>('');
   const [showGameOverModal, setShowGameOverModal] = useState<boolean>(false);
   const [pendingPromotion, setPendingPromotion] = useState<{ from: Position; to: Position } | null>(null);
 
@@ -285,22 +287,24 @@ export const App: React.FC = () => {
   useEffect(() => {
     if (currentScreen !== 'game') return;
     if (gameSettings.timeLimit === 0) return;
-    if (status === 'checkmate' || status === 'stalemate' || status === 'draw') return;
+    if (status === 'checkmate' || status === 'stalemate' || status === 'draw' || status === 'resigned' || status === 'timeout') return;
 
     if (whiteTime === 0) {
       sound.playDefeat();
-      setStatus('checkmate');
+      setStatus('timeout');
       setWinner('black');
+      setGameOverReason(lang === 'en' ? "White's time expired" : 'Beyaz oyuncunun süresi bitti');
       setShowGameOverModal(true);
       finishGame('black', 'Beyaz oyuncunun süresi bitti');
     } else if (blackTime === 0) {
       sound.playVictory();
-      setStatus('checkmate');
+      setStatus('timeout');
       setWinner('white');
+      setGameOverReason(lang === 'en' ? "Black's time expired" : 'Siyah oyuncunun süresi bitti');
       setShowGameOverModal(true);
       finishGame('white', 'Siyah oyuncunun süresi bitti');
     }
-  }, [whiteTime, blackTime, currentScreen, gameSettings.timeLimit, status]);
+  }, [whiteTime, blackTime, currentScreen, gameSettings.timeLimit, status, lang]);
 
   // Finish Game Helper
   const finishGame = (finalWinner: Color | 'draw', _reason: string) => {
@@ -384,6 +388,7 @@ export const App: React.FC = () => {
     setLastMove(null);
     setStatus('active');
     setWinner(null);
+    setGameOverReason('');
     setShowGameOverModal(false);
     setPendingPromotion(null);
     setEvalScore(0);
@@ -480,10 +485,12 @@ export const App: React.FC = () => {
     const inCheck = isKingInCheck(newBoard, nextTurn);
     const checkmated = isCheckmate(newBoard, nextTurn, newEnPassantTarget);
     const stalemated = isStalemate(newBoard, nextTurn, newEnPassantTarget);
+    const insufficientMaterial = isInsufficientMaterial(newBoard);
 
     let newStatus: GameStatus = 'active';
     if (checkmated) newStatus = 'checkmate';
     else if (stalemated) newStatus = 'stalemate';
+    else if (insufficientMaterial) newStatus = 'draw';
     else if (inCheck) newStatus = 'check';
 
     const newHistory = [...current.moveHistory, moveRecord];
@@ -514,12 +521,27 @@ export const App: React.FC = () => {
 
     if (checkmated) {
       setWinner(current.currentTurn);
+      setGameOverReason(lang === 'en' ? 'Checkmate' : 'Şah mat');
       setShowGameOverModal(true);
-      finishGame(current.currentTurn, 'Şah mat');
+      finishGame(current.currentTurn, lang === 'en' ? 'Checkmate' : 'Şah mat');
     } else if (stalemated) {
       setWinner('draw');
+      setGameOverReason(
+        lang === 'en'
+          ? 'Stalemate - The king has no legal moves, but is not in check.'
+          : 'Pat oldu - Şah tehdit altında değil fakat oynayacak yasal hamle yok.'
+      );
       setShowGameOverModal(true);
       finishGame('draw', 'Pat oldu');
+    } else if (insufficientMaterial) {
+      setWinner('draw');
+      setGameOverReason(
+        lang === 'en'
+          ? 'Draw - Insufficient material to deliver checkmate.'
+          : 'Yetersiz taş - Tahtada mat yapmaya yetecek taş kalmadı.'
+      );
+      setShowGameOverModal(true);
+      finishGame('draw', 'Yetersiz taş');
     } else if (
       current.mode === 'ai' &&
       nextTurn !== current.humanColor
@@ -701,6 +723,11 @@ export const App: React.FC = () => {
     sound.playDefeat();
     setStatus('resigned');
     setWinner(opponentWinner);
+    setGameOverReason(
+      lang === 'en'
+        ? `${resigningColor === 'white' ? 'White' : 'Black'} resigned`
+        : `${resigningColor === 'white' ? 'Beyaz' : 'Siyah'} oyunu terk etti`
+    );
     setShowGameOverModal(true);
     finishGame(opponentWinner, `${resigningColor === 'white' ? 'Beyaz' : 'Siyah'} terk etti`);
     addToast(lang === 'en' ? 'You resigned the game.' : 'Oyunu terk ettiniz.', 'info');
@@ -712,6 +739,7 @@ export const App: React.FC = () => {
     sound.playMove();
     setStatus('draw');
     setWinner('draw');
+    setGameOverReason(lang === 'en' ? 'Mutual agreement draw' : 'Karşılıklı berabere');
     setShowGameOverModal(true);
     finishGame('draw', 'Karşılıklı berabere');
     addToast(lang === 'en' ? 'Game ended in a draw.' : 'Oyun berabere sonuçlandı.', 'info');
@@ -972,6 +1000,7 @@ export const App: React.FC = () => {
       {pendingPromotion && (
         <PromotionModal
           color={currentTurn}
+          lang={lang}
           onSelect={choice => {
             commitMove(pendingPromotion.from, pendingPromotion.to, choice);
           }}
@@ -983,6 +1012,7 @@ export const App: React.FC = () => {
         <GameOverModal
           status={status}
           winner={winner}
+          reason={gameOverReason}
           lang={lang}
           totalMoves={moveHistory.length}
           gameDuration={
