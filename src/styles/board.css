@@ -194,3 +194,47 @@
   z-index: 10;
 }
 
+/* Best Move Star Badge (Never shifts piece, positioned absolute at top-right corner) */
+.best-move-badge-wrap {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.best-move-star-circle {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: #ffffff;
+  border: 2px solid #16a34a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4), 0 0 10px rgba(34, 197, 94, 0.35);
+  animation: star-pulse 2s infinite ease-in-out;
+}
+
+@keyframes star-pulse {
+  0%, 100% {
+    transform: scale(1);
+    box-shadow: 0 2px 8px rgba(22, 163, 74, 0.4), 0 0 10px rgba(34, 197, 94, 0.35);
+  }
+  50% {
+    transform: scale(1.1);
+    box-shadow: 0 3px 12px rgba(22, 163, 74, 0.65), 0 0 16px rgba(34, 197, 94, 0.55);
+  }
+}
+
+/* Recommended Move SVG Arrow Overlay (Renders directly above grid) */
+.board-arrow-svg-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 25;
+  pointer-events: none;
+}
+

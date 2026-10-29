@@ -130,7 +130,7 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 {isBestMoveSquare && (
                   <div className="best-move-badge-wrap" title="En İyi Hamle (Mükemmel)">
                     <div className="best-move-star-circle">
-                      <Star size={13} fill="#ffffff" color="#ffffff" />
+                      <Star size={13} fill="#16a34a" color="#16a34a" />
                     </div>
                   </div>
                 )}
