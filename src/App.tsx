@@ -32,6 +32,7 @@ import { GameOverModal } from './components/GameOverModal';
 import { PromotionModal } from './components/PromotionModal';
 import { SettingsModal } from './components/SettingsModal';
 import { MatchHistoryModal } from './components/MatchHistoryModal';
+import { GameReview } from './components/GameReview';
 import { Toast } from './components/Toast';
 import type { ToastMessage } from './components/Toast';
 
@@ -45,8 +46,9 @@ export const App: React.FC = () => {
   // Splash Screen State
   const [showSplash, setShowSplash] = useState<boolean>(true);
 
-  // Screen: 'menu' (full lobby) or 'game' (gameplay without top bar)
-  const [currentScreen, setCurrentScreen] = useState<'menu' | 'game'>('menu');
+  // Screen: 'menu' (lobby), 'game' (gameplay), or 'review' (match analysis)
+  const [currentScreen, setCurrentScreen] = useState<'menu' | 'game' | 'review'>('menu');
+  const [selectedReviewMatch, setSelectedReviewMatch] = useState<MatchHistoryItem | null>(null);
 
   // Theme Mode: Light is DEFAULT
   const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
@@ -105,6 +107,29 @@ export const App: React.FC = () => {
   const [evalScore, setEvalScore] = useState<number>(0);
   const aiRequestIdRef = useRef<number>(0);
 
+  // Synchronized Game Reference to eliminate state-closure desync & double-moves
+  const gameStateRef = useRef<{
+    board: Board;
+    currentTurn: Color;
+    enPassantTarget: Position | null;
+    moveHistory: MoveRecord[];
+    redoStack: MoveRecord[];
+    status: GameStatus;
+    humanColor: Color;
+    difficulty: GameSettings['difficulty'];
+    mode: GameSettings['mode'];
+  }>({
+    board: createInitialBoard(),
+    currentTurn: 'white',
+    enPassantTarget: null,
+    moveHistory: [],
+    redoStack: [],
+    status: 'active',
+    humanColor: 'white',
+    difficulty: 'medium',
+    mode: 'ai'
+  });
+
   // Sound & Toasts
   const [isMuted, setIsMuted] = useState<boolean>(() => sound.isMuted());
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -130,7 +155,7 @@ export const App: React.FC = () => {
     setStoredLanguage(newLang);
   };
 
-  // Toast Helper (Bottom-Right Corner)
+  // Toast Helper
   const addToast = useCallback((text: string, type: ToastMessage['type'] = 'info') => {
     const id = Date.now().toString() + Math.random();
     setToasts(prev => [...prev, { id, text, type }]);
@@ -194,7 +219,8 @@ export const App: React.FC = () => {
       opponent: opponentName,
       result: isDraw ? 'draw' : isPlayerWin ? 'win' : 'loss',
       totalMoves: moveHistory.length,
-      playerColor: humanColor
+      playerColor: humanColor,
+      moves: moveHistory
     });
 
     setMatchHistory(getMatchHistory());
@@ -225,8 +251,23 @@ export const App: React.FC = () => {
     setHumanColor(chosenColor);
     setIsFlipped(chosenColor === 'black');
 
+    const freshBoard = createInitialBoard();
+
+    // Reset synchronous ref
+    gameStateRef.current = {
+      board: freshBoard,
+      currentTurn: 'white',
+      enPassantTarget: null,
+      moveHistory: [],
+      redoStack: [],
+      status: 'active',
+      humanColor: chosenColor,
+      difficulty: newSettings.difficulty,
+      mode: newSettings.mode
+    };
+
     // Reset game board and state
-    setBoard(createInitialBoard());
+    setBoard(freshBoard);
     setCurrentTurn('white');
     setMoveHistory([]);
     setRedoStack([]);
@@ -253,7 +294,7 @@ export const App: React.FC = () => {
 
     // If human is black and playing vs AI, trigger AI first move
     if (newSettings.mode === 'ai' && chosenColor === 'black') {
-      triggerStockfishMove(createInitialBoard(), [], 'white', newSettings.difficulty);
+      triggerStockfishMove(freshBoard, [], 'white', newSettings.difficulty, null);
     }
   };
 
@@ -262,32 +303,34 @@ export const App: React.FC = () => {
     currentBoard: Board,
     history: MoveRecord[],
     aiColor: Color,
-    difficulty: GameSettings['difficulty']
+    difficulty: GameSettings['difficulty'],
+    epTarget: Position | null
   ) => {
     const requestId = ++aiRequestIdRef.current;
     setIsAiThinking(true);
 
     try {
-      const fen = boardToFEN(currentBoard, aiColor, enPassantTarget, history);
-      const res = await fetchStockfishMove(fen, difficulty, currentBoard, aiColor, enPassantTarget);
+      const fen = boardToFEN(currentBoard, aiColor, epTarget, history);
+      const res = await fetchStockfishMove(fen, difficulty, currentBoard, aiColor, epTarget);
 
       if (aiRequestIdRef.current !== requestId) return;
+      if (gameStateRef.current.currentTurn !== aiColor) return;
 
       if (res && res.from && res.to) {
         if (typeof res.eval === 'number') {
           setEvalScore(res.eval);
         }
-        executeAiMove(res.from, res.to);
+        commitMove(res.from, res.to);
       } else {
-        const fallback = getLocalFallbackMove(currentBoard, aiColor, enPassantTarget, difficulty);
+        const fallback = getLocalFallbackMove(currentBoard, aiColor, epTarget, difficulty);
         if (fallback) {
-          executeAiMove(fallback.from, fallback.to);
+          commitMove(fallback.from, fallback.to);
         }
       }
     } catch {
-      const fallback = getLocalFallbackMove(currentBoard, aiColor, enPassantTarget, difficulty);
+      const fallback = getLocalFallbackMove(currentBoard, aiColor, epTarget, difficulty);
       if (fallback) {
-        executeAiMove(fallback.from, fallback.to);
+        commitMove(fallback.from, fallback.to);
       }
     } finally {
       if (aiRequestIdRef.current === requestId) {
@@ -296,87 +339,85 @@ export const App: React.FC = () => {
     }
   };
 
-  // Execute AI Move
-  const executeAiMove = (from: Position, to: Position, promotionChoice?: PieceType) => {
-    commitMove(from, to, promotionChoice || 'queen');
-  };
-
-  // Commit Move Function
+  // Commit Move Function - Synchronized with gameStateRef to prevent double moves
   const commitMove = (
     from: Position,
     to: Position,
     promotionChoice?: PieceType
   ) => {
-    const piece = board[from.row][from.col];
-    if (!piece) return;
+    const current = gameStateRef.current;
+    if (current.status !== 'active' && current.status !== 'check') return;
 
-    const targetPiece = board[to.row][to.col];
+    const piece = current.board[from.row][from.col];
+    if (!piece || piece.color !== current.currentTurn) return;
+
+    const targetPiece = current.board[to.row][to.col];
     const isEnPassant = Boolean(
       piece.type === 'pawn' &&
-      enPassantTarget &&
-      to.row === enPassantTarget.row &&
-      to.col === enPassantTarget.col
+      current.enPassantTarget &&
+      to.row === current.enPassantTarget.row &&
+      to.col === current.enPassantTarget.col
     );
     const isCapture = Boolean(targetPiece || isEnPassant);
     const isCastle = piece.type === 'king' && Math.abs(to.col - from.col) === 2;
 
     const { newBoard, moveRecord, newEnPassantTarget } = executeMove(
-      board,
+      current.board,
       from,
       to,
-      enPassantTarget,
+      current.enPassantTarget,
       promotionChoice || 'queen'
     );
 
-    const nextTurn: Color = currentTurn === 'white' ? 'black' : 'white';
-
+    const nextTurn: Color = current.currentTurn === 'white' ? 'black' : 'white';
     const inCheck = isKingInCheck(newBoard, nextTurn);
     const checkmated = isCheckmate(newBoard, nextTurn, newEnPassantTarget);
     const stalemated = isStalemate(newBoard, nextTurn, newEnPassantTarget);
 
-    // Play appropriate sound with priority logic
-    sound.playMoveEvent(Boolean(inCheck || checkmated), isCapture, isCastle);
+    let newStatus: GameStatus = 'active';
+    if (checkmated) newStatus = 'checkmate';
+    else if (stalemated) newStatus = 'stalemate';
+    else if (inCheck) newStatus = 'check';
 
+    const newHistory = [...current.moveHistory, moveRecord];
+
+    // Atomically update state ref
+    gameStateRef.current = {
+      ...current,
+      board: newBoard,
+      currentTurn: nextTurn,
+      enPassantTarget: newEnPassantTarget,
+      moveHistory: newHistory,
+      redoStack: [],
+      status: newStatus
+    };
+
+    // Update UI states
+    sound.playMoveEvent(Boolean(inCheck || checkmated), isCapture, isCastle);
     setBoard(newBoard);
     setCurrentTurn(nextTurn);
     setEnPassantTarget(newEnPassantTarget);
-    setMoveHistory(prev => [...prev, moveRecord]);
+    setMoveHistory(newHistory);
     setRedoStack([]);
     setLastMove({ from, to });
     setSelectedSquare(null);
     setLegalMoves([]);
     setPendingPromotion(null);
+    setStatus(newStatus);
 
-    // Update game status
     if (checkmated) {
-      setStatus('checkmate');
-      setWinner(currentTurn);
+      setWinner(current.currentTurn);
       setShowGameOverModal(true);
-      finishGame(currentTurn, 'Şah mat');
+      finishGame(current.currentTurn, 'Şah mat');
     } else if (stalemated) {
-      setStatus('stalemate');
       setWinner('draw');
       setShowGameOverModal(true);
       finishGame('draw', 'Pat oldu');
-    } else if (inCheck) {
-      setStatus('check');
-    } else {
-      setStatus('active');
-    }
-
-    // AI Turn Trigger
-    if (
-      !checkmated &&
-      !stalemated &&
-      gameSettings.mode === 'ai' &&
-      nextTurn !== humanColor
+    } else if (
+      current.mode === 'ai' &&
+      nextTurn !== current.humanColor
     ) {
-      triggerStockfishMove(
-        newBoard,
-        [...moveHistory, moveRecord],
-        nextTurn,
-        gameSettings.difficulty
-      );
+      triggerStockfishMove(newBoard, newHistory, nextTurn, current.difficulty, newEnPassantTarget);
     }
   };
 
@@ -384,17 +425,17 @@ export const App: React.FC = () => {
   const handleSquareClick = (row: number, col: number) => {
     if (status === 'checkmate' || status === 'stalemate' || status === 'draw') return;
     if (isAiThinking) return;
-
     if (gameSettings.mode === 'ai' && currentTurn !== humanColor) return;
 
-    const clickedPiece = board[row][col];
+    const current = gameStateRef.current;
+    const clickedPiece = current.board[row][col];
 
     // If a square is already selected
     if (selectedSquare) {
       const isLegal = legalMoves.some(m => m.row === row && m.col === col);
 
       if (isLegal) {
-        const piece = board[selectedSquare.row][selectedSquare.col];
+        const piece = current.board[selectedSquare.row][selectedSquare.col];
 
         // Check if pawn promotion
         const isPromotion =
@@ -414,7 +455,7 @@ export const App: React.FC = () => {
       // Re-select own piece
       if (clickedPiece && clickedPiece.color === currentTurn) {
         setSelectedSquare({ row, col });
-        const moves = getLegalMoves(board, { row, col }, enPassantTarget);
+        const moves = getLegalMoves(current.board, { row, col }, enPassantTarget);
         setLegalMoves(moves);
         return;
       }
@@ -428,7 +469,7 @@ export const App: React.FC = () => {
     // Select piece
     if (clickedPiece && clickedPiece.color === currentTurn) {
       setSelectedSquare({ row, col });
-      const moves = getLegalMoves(board, { row, col }, enPassantTarget);
+      const moves = getLegalMoves(current.board, { row, col }, enPassantTarget);
       setLegalMoves(moves);
     }
   };
@@ -461,6 +502,16 @@ export const App: React.FC = () => {
       tempTarget = res.newEnPassantTarget;
       tempTurn = tempTurn === 'white' ? 'black' : 'white';
     }
+
+    gameStateRef.current = {
+      ...gameStateRef.current,
+      board: tempBoard,
+      currentTurn: tempTurn,
+      enPassantTarget: tempTarget,
+      moveHistory: newHistory,
+      redoStack: [...popped.reverse(), ...gameStateRef.current.redoStack],
+      status: 'active'
+    };
 
     setBoard(tempBoard);
     setCurrentTurn(tempTurn);
@@ -508,6 +559,16 @@ export const App: React.FC = () => {
       tempTurn = tempTurn === 'white' ? 'black' : 'white';
       updatedHistory.push(m);
     }
+
+    gameStateRef.current = {
+      ...gameStateRef.current,
+      board: tempBoard,
+      currentTurn: tempTurn,
+      enPassantTarget: tempTarget,
+      moveHistory: updatedHistory,
+      redoStack: remainingRedo,
+      status: 'active'
+    };
 
     setBoard(tempBoard);
     setCurrentTurn(tempTurn);
@@ -618,6 +679,12 @@ export const App: React.FC = () => {
     });
   };
 
+  // Open Game Review Mode for a match
+  const handleSelectReviewMatch = (match: MatchHistoryItem) => {
+    setSelectedReviewMatch(match);
+    setCurrentScreen('review');
+  };
+
   // Captured pieces calculation
   const capturedSummary = calculateCaptured(board);
   const isChecked = status === 'check';
@@ -650,6 +717,7 @@ export const App: React.FC = () => {
           onToggleLang={handleToggleLang}
           onOpenSettings={() => setShowSettingsModal(true)}
           onOpenHistory={() => setShowHistoryModal(true)}
+          onSelectMatch={handleSelectReviewMatch}
           onStartGame={handleStartGame}
           onRefreshHistory={() => setMatchHistory(getMatchHistory())}
         />
@@ -777,6 +845,15 @@ export const App: React.FC = () => {
         </div>
       )}
 
+      {/* SCREEN 3: GAME REVIEW & STOCKFISH EVALUATION MODE */}
+      {currentScreen === 'review' && selectedReviewMatch && (
+        <GameReview
+          match={selectedReviewMatch}
+          onBack={() => setCurrentScreen('menu')}
+          themeMode={themeMode}
+        />
+      )}
+
       {/* Pawn Promotion Modal */}
       {pendingPromotion && (
         <PromotionModal
@@ -828,6 +905,7 @@ export const App: React.FC = () => {
         onClose={() => setShowHistoryModal(false)}
         history={matchHistory}
         onRefresh={() => setMatchHistory(getMatchHistory())}
+        onSelectMatch={handleSelectReviewMatch}
       />
 
       {/* Toast Notifications */}

@@ -41,41 +41,37 @@ export const PlayerCard: React.FC<PlayerCardProps> = ({
   return (
     <div className={`player-card ${isTurn ? 'is-active-turn' : ''}`}>
       <div className="player-card-left">
-        {/* Avatar with dynamic turn ring */}
-        <div className={`player-avatar ${isAI ? 'avatar-ai' : isWhite ? 'avatar-white' : 'avatar-black'}`}>
-          {isAI ? <Bot size={16} /> : <User size={16} />}
+        {/* Sleek Rounded Profile Pill */}
+        <div className={`player-profile-pill ${isTurn ? 'turn-active' : ''}`}>
+          <div className={`player-avatar ${isAI ? 'avatar-ai' : isWhite ? 'avatar-white' : 'avatar-black'}`}>
+            {isAI ? <Bot size={14} /> : <User size={14} />}
+          </div>
+          <span className="player-display-name">{name}</span>
+          {isTurn && <span className="turn-indicator-pill">Sıra Sizde</span>}
         </div>
 
-        <div className="player-details">
-          <div className="player-title-row">
-            <span className="player-display-name">{name}</span>
-            {isTurn && <span className="turn-indicator-pill">Sıra Sizde</span>}
-          </div>
+        {/* Captured pieces compact strip */}
+        <div className="captured-pieces-strip">
+          {capturedPieces.length > 0 && (
+            <div className="captured-icons-group">
+              {pieceOrder.map(type => {
+                const count = pieceCounts[type];
+                if (!count) return null;
+                return (
+                  <div key={type} className="captured-chip">
+                    <span className="captured-mini-svg">
+                      <PieceIcon color={isWhite ? 'black' : 'white'} type={type} />
+                    </span>
+                    {count > 1 && <span className="captured-multiplier">×{count}</span>}
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
-          {/* Captured pieces compact strip */}
-          <div className="captured-pieces-strip">
-            {capturedPieces.length > 0 && (
-              <div className="captured-icons-group">
-                {pieceOrder.map(type => {
-                  const count = pieceCounts[type];
-                  if (!count) return null;
-                  return (
-                    <div key={type} className="captured-chip">
-                      <span className="captured-mini-svg">
-                        {/* The captured piece color is opposite to the player's color */}
-                        <PieceIcon color={isWhite ? 'black' : 'white'} type={type} />
-                      </span>
-                      {count > 1 && <span className="captured-multiplier">×{count}</span>}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {advantage > 0 && (
-              <span className="advantage-score-pill">+{advantage}</span>
-            )}
-          </div>
+          {advantage > 0 && (
+            <span className="advantage-score-pill">+{advantage}</span>
+          )}
         </div>
       </div>
 

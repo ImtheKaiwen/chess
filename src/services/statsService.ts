@@ -7,6 +7,8 @@ export interface PlayerStats {
   bestStreak: number;
 }
 
+import type { MoveRecord } from '../engine/types';
+
 export interface MatchHistoryItem {
   id: string;
   date: string;
@@ -16,6 +18,7 @@ export interface MatchHistoryItem {
   totalMoves: number;
   duration?: number; // in seconds
   playerColor: string;
+  moves?: MoveRecord[];
 }
 
 const STATS_KEY = 'kaiwen_chess_stats';

@@ -51,6 +51,7 @@ interface StartScreenProps {
   onToggleLang: (lang: Language) => void;
   onOpenSettings: () => void;
   onOpenHistory: () => void;
+  onSelectMatch?: (match: MatchHistoryItem) => void;
   onStartGame: (settings: GameSettings) => void;
   onRefreshHistory: () => void;
 }
@@ -67,6 +68,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onToggleLang,
   onOpenSettings,
   onOpenHistory,
+  onSelectMatch,
   onStartGame,
   onRefreshHistory
 }) => {
@@ -124,7 +126,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
       <aside className={`lobby-sidebar ${sidebarOpen ? 'open' : 'collapsed'}`}>
         {/* Sidebar Header */}
         <div className="lobby-sidebar-header">
-          {sidebarOpen ? (
+          {sidebarOpen && (
             <div className="lobby-brand-mini">
               <img
                 src={logoSrc}
@@ -135,17 +137,6 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                 }}
               />
               <span className="lobby-brand-name">KAIWEN</span>
-            </div>
-          ) : (
-            <div className="sidebar-collapsed-brand">
-              <img
-                src={logoSrc}
-                alt="KAIWEN"
-                className="lobby-mini-logo"
-                onError={e => {
-                  e.currentTarget.style.display = 'none';
-                }}
-              />
             </div>
           )}
 
@@ -168,7 +159,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                 type="button"
                 className="btn-new-match"
                 onClick={() => setStep(1)}
-                title="Yeni Karşılaşma Kur"
+                data-tooltip="Yeni Karşılaşma Kur"
               >
                 <Plus size={16} />
                 <span>{t.newMatch}</span>
@@ -187,7 +178,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                     type="button"
                     className="btn-clear-history"
                     onClick={handleClearHistory}
-                    title="Geçmişi Temizle"
+                    data-tooltip="Geçmişi Temizle"
                   >
                     <Trash2 size={13} />
                   </button>
@@ -201,7 +192,12 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   </div>
                 ) : (
                   matchHistory.map(m => (
-                    <div key={m.id} className="history-item-row">
+                    <div
+                      key={m.id}
+                      className="history-item-row cursor-pointer"
+                      onClick={() => onSelectMatch?.(m)}
+                      data-tooltip="Maçı İncele"
+                    >
                       <div className="item-main-info">
                         <span className="item-title">{m.opponent}</span>
                         <span className="item-meta">
@@ -239,7 +235,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   type="button"
                   className="btn-utility"
                   onClick={onToggleTheme}
-                  title={themeMode === 'light' ? 'Koyu Temaya Geç' : 'Açık Temaya Geç'}
+                  data-tooltip={themeMode === 'light' ? 'Koyu Temaya Geç' : 'Açık Temaya Geç'}
                 >
                   {themeMode === 'light' ? <Moon size={14} /> : <Sun size={14} />}
                   <span>{themeMode === 'light' ? 'Koyu' : 'Açık'}</span>
@@ -249,7 +245,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   type="button"
                   className={`btn-utility ${isMuted ? '' : 'active'}`}
                   onClick={onToggleSound}
-                  title={isMuted ? 'Sesi Aç' : 'Sesi Kapat'}
+                  data-tooltip={isMuted ? 'Sesi Aç' : 'Sesi Kapat'}
                 >
                   {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
                   <span>{isMuted ? 'Sessiz' : 'Ses'}</span>
@@ -259,7 +255,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   type="button"
                   className="btn-utility"
                   onClick={onOpenSettings}
-                  title="Ayarlar"
+                  data-tooltip="Ayarlar"
                 >
                   <Settings size={14} />
                   <span>Ayar</span>

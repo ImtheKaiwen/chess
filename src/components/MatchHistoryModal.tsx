@@ -1,5 +1,5 @@
 import React from 'react';
-import { X, History, Trash2, Calendar, Trophy, ChevronRight } from 'lucide-react';
+import { X, History, Trash2, Calendar, Trophy, ChevronRight, Eye } from 'lucide-react';
 import type { MatchHistoryItem } from '../services/statsService';
 import { clearMatchHistory } from '../services/statsService';
 
@@ -8,13 +8,15 @@ interface MatchHistoryModalProps {
   onClose: () => void;
   history: MatchHistoryItem[];
   onRefresh: () => void;
+  onSelectMatch?: (match: MatchHistoryItem) => void;
 }
 
 export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
   isOpen,
   onClose,
   history,
-  onRefresh
+  onRefresh,
+  onSelectMatch
 }) => {
   if (!isOpen) return null;
 
@@ -45,7 +47,7 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
                 type="button"
                 className="btn-icon-text btn-clear-modal"
                 onClick={handleClear}
-                title="Geçmişi Temizle"
+                data-tooltip="Geçmişi Temizle"
               >
                 <Trash2 size={14} />
                 <span>Temizle</span>
@@ -74,7 +76,17 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
           ) : (
             <div className="history-modal-list">
               {history.map(item => (
-                <div key={item.id} className="history-card-item">
+                <div
+                  key={item.id}
+                  className="history-card-item cursor-pointer"
+                  onClick={() => {
+                    if (onSelectMatch) {
+                      onSelectMatch(item);
+                      onClose();
+                    }
+                  }}
+                  title="Maçı İncele"
+                >
                   <div className="history-card-left">
                     <div className={`result-indicator-bar ${item.result}`} />
                     <div className="history-card-info">
@@ -100,7 +112,14 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
                       </div>
                     </div>
                   </div>
-                  <ChevronRight size={16} className="history-card-arrow" />
+
+                  <div className="history-card-right-action">
+                    <span className="inspect-pill">
+                      <Eye size={12} />
+                      <span>İncele</span>
+                    </span>
+                    <ChevronRight size={16} className="history-card-arrow" />
+                  </div>
                 </div>
               ))}
             </div>

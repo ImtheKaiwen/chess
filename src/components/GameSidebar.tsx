@@ -15,7 +15,6 @@ import {
   ScrollText,
   Loader2,
   ChevronRight,
-  ChevronLeft,
   Box
 } from 'lucide-react';
 
@@ -102,15 +101,14 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
           ------------------------------------------------------ */}
       {!isOpen && (
         <div className="floating-edge-dock">
-          {/* Main open handle with move badge */}
+          {/* Main open handle with clean move badge */}
           <button
             type="button"
             className="dock-item-btn dock-btn-expand"
             onClick={onToggleOpen}
             data-tooltip="Hamle Listesini Aç"
           >
-            <ChevronLeft size={16} />
-            <ScrollText size={15} />
+            <ScrollText size={16} />
             {moveHistory.length > 0 && (
               <span className="dock-move-badge">{moveHistory.length}</span>
             )}
