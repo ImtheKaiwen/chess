@@ -1646,13 +1646,13 @@
   pointer-events: auto;
 }
 
-.game-viewport.mode-3d .dock-card-wrap.top-dock .player-profile-pill {
+.game-viewport.mode-3d .dock-card-wrap.top-dock .player-card {
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
   border-top: none !important;
   border-bottom-left-radius: 16px !important;
   border-bottom-right-radius: 16px !important;
-  padding: 0.6rem 1.4rem;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .game-viewport.mode-3d .dock-card-wrap.bottom-dock {
@@ -1667,16 +1667,33 @@
   pointer-events: auto;
 }
 
-.game-viewport.mode-3d .dock-card-wrap.bottom-dock .player-profile-pill {
+.game-viewport.mode-3d .dock-card-wrap.bottom-dock .player-card {
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
   border-bottom: none !important;
   border-top-left-radius: 16px !important;
   border-top-right-radius: 16px !important;
-  padding: 0.6rem 1.4rem;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
 }
 
-.game-viewport.mode-3d .player-profile-pill {
+/* Edge-Attached Player Cards in 2D Mode */
+.dock-card-wrap.top-dock .player-card {
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-top: none !important;
+  border-bottom-left-radius: 14px !important;
+  border-bottom-right-radius: 14px !important;
+}
+
+.dock-card-wrap.bottom-dock .player-card {
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-bottom: none !important;
+  border-top-left-radius: 14px !important;
+  border-top-right-radius: 14px !important;
+}
+
+.game-viewport.mode-3d .player-card {
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
   background: rgba(255, 255, 255, 0.92);
@@ -1684,7 +1701,15 @@
   box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
-.dark .game-viewport.mode-3d .player-profile-pill {
+html.theme-dark .player-card,
+.theme-dark .player-card {
+  background: rgba(24, 24, 27, 0.95);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f4f4f5;
+}
+
+html.theme-dark .game-viewport.mode-3d .player-card,
+.theme-dark .game-viewport.mode-3d .player-card {
   background: rgba(24, 24, 27, 0.92);
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: 0 10px 32px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
@@ -1714,7 +1739,8 @@
   z-index: 35;
 }
 
-.dark .game-viewport.mode-3d .three-camera-controls {
+html.theme-dark .game-viewport.mode-3d .three-camera-controls,
+.theme-dark .game-viewport.mode-3d .three-camera-controls {
   background: rgba(24, 24, 27, 0.9);
   border-color: rgba(255, 255, 255, 0.12);
   box-shadow: 4px 4px 20px rgba(0, 0, 0, 0.5);
@@ -1785,6 +1811,167 @@
 @keyframes modal-scale {
   0% { transform: scale(0.95); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+
+/* GAME OVER MODAL (Post-Game Results) */
+.gameover-modal-card {
+  width: 92%;
+  max-width: 440px;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg, 16px);
+  box-shadow: var(--shadow-modal);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2.2rem 1.8rem 1.8rem;
+  overflow: hidden;
+  animation: modal-scale 0.24s cubic-bezier(0.16, 1, 0.3, 1);
+  box-sizing: border-box;
+}
+
+.gameover-modal-card .modal-header-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(234, 179, 8, 0.12);
+  color: #eab308;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 1.1rem;
+  border: 1px solid rgba(234, 179, 8, 0.25);
+  box-shadow: 0 4px 14px rgba(234, 179, 8, 0.2);
+}
+
+.gameover-modal-card .modal-title {
+  font-size: 1.28rem;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 0.45rem;
+}
+
+.gameover-modal-card .modal-desc {
+  font-size: 0.86rem;
+  color: var(--text-secondary);
+  line-height: 1.45;
+  margin-bottom: 1.4rem;
+}
+
+.gameover-modal-card .stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.65rem;
+  width: 100%;
+  margin-bottom: 1.6rem;
+}
+
+.gameover-modal-card .stat-item {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md, 12px);
+  padding: 0.75rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  text-align: left;
+}
+
+.gameover-modal-card .stat-label {
+  font-size: 0.72rem;
+  font-weight: 500;
+  color: var(--text-muted);
+}
+
+.gameover-modal-card .stat-val {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-mono, monospace);
+}
+
+.gameover-modal-card .modal-actions {
+  display: flex;
+  gap: 0.65rem;
+  width: 100%;
+}
+
+.gameover-modal-card .btn-primary,
+.gameover-modal-card .btn-secondary {
+  flex: 1;
+  height: 42px;
+  border-radius: var(--radius-md, 10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.gameover-modal-card .btn-primary {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
+  box-shadow: var(--shadow-sm);
+}
+
+.gameover-modal-card .btn-primary:hover {
+  background: var(--btn-primary-hover);
+  transform: translateY(-1px);
+}
+
+.gameover-modal-card .btn-secondary {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+}
+
+.gameover-modal-card .btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--border-medium);
+}
+
+/* TOAST NOTIFICATIONS - Fixed Bottom Right */
+.toast-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 99999;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  background: var(--bg-surface);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  box-shadow: var(--shadow-lg), 0 4px 16px rgba(0, 0, 0, 0.12);
+  padding: 0.65rem 1rem;
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.84rem;
+  font-weight: 500;
+  pointer-events: auto;
+  animation: toast-slide-in 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes toast-slide-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .modal-header {

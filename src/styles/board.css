@@ -216,6 +216,34 @@
   animation: star-pulse 2s infinite ease-in-out;
 }
 
+.best-move-star-circle.badge-best {
+  border-color: #16a34a;
+  box-shadow: 0 2px 8px rgba(22, 163, 74, 0.45), 0 0 10px rgba(34, 197, 94, 0.35);
+}
+
+.best-move-star-circle.badge-good {
+  border-color: #0284c7;
+  box-shadow: 0 2px 8px rgba(2, 132, 199, 0.45), 0 0 10px rgba(56, 189, 248, 0.35);
+  animation: none;
+}
+
+.best-move-star-circle.badge-inaccuracy {
+  border-color: #d97706;
+  box-shadow: 0 2px 8px rgba(217, 119, 6, 0.45), 0 0 10px rgba(245, 158, 11, 0.35);
+  animation: none;
+}
+
+.best-move-star-circle.badge-blunder {
+  border-color: #dc2626;
+  box-shadow: 0 2px 8px rgba(220, 38, 38, 0.5), 0 0 10px rgba(239, 68, 68, 0.4);
+  animation: none;
+}
+
+html.theme-dark .best-move-star-circle,
+.theme-dark .best-move-star-circle {
+  background: #18181b;
+}
+
 @keyframes star-pulse {
   0%, 100% {
     transform: scale(1);

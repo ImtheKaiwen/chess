@@ -58,7 +58,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
   return (
     <div className="modal-backdrop">
-      <div className="modal-card">
+      <div className="modal-card gameover-modal-card">
         <div className="modal-header-icon">
           <Trophy size={28} />
         </div>

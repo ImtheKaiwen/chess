@@ -5,7 +5,7 @@ import { executeMove } from '../engine/chessEngine';
 import { boardToFEN } from '../utils/helpers';
 import { fetchStockfishMove } from '../services/aiService';
 import type { MatchHistoryItem } from '../services/statsService';
-import { ChessBoard } from './ChessBoard';
+import { ChessBoard, type ReviewBadge, type HighlightedSquare } from './ChessBoard';
 import {
   ChevronLeft,
   ChevronRight,
@@ -194,10 +194,42 @@ export const GameReview: React.FC<GameReviewProps> = ({ match, onBack, themeMode
     ? {
         from: currentEval.bestFrom!,
         to: currentEval.bestTo!,
-        color: '#16a34a'
+        color: currentEval.badge === 'good' ? '#0284c7' : '#16a34a'
       }
     : null;
-  const bestMoveBadgePos = isBestMove && playedMove ? playedMove.to : null;
+
+  // Active Review Badge (Star = best, ThumbsUp = good, Alert = inaccuracy, Red X = blunder)
+  let reviewBadge: ReviewBadge | null = null;
+  if (playedMove && currentEval) {
+    reviewBadge = {
+      position: playedMove.to,
+      type: currentEval.badge
+    };
+  }
+
+  // Highlighted Squares:
+  // - Blunder / Inaccuracy: highlight played move squares with red tint and border
+  // - Good Move: highlight played move squares with modern blue tint and border
+  // - Best Move: highlight played move squares with green tint and border
+  const highlightedSquares: HighlightedSquare[] = [];
+  if (playedMove && currentEval) {
+    if (currentEval.badge === 'blunder' || currentEval.badge === 'inaccuracy') {
+      highlightedSquares.push(
+        { position: playedMove.from, color: 'rgba(239, 68, 68, 0.28)', borderColor: '#ef4444' },
+        { position: playedMove.to, color: 'rgba(239, 68, 68, 0.28)', borderColor: '#ef4444' }
+      );
+    } else if (currentEval.badge === 'good') {
+      highlightedSquares.push(
+        { position: playedMove.from, color: 'rgba(2, 132, 199, 0.22)', borderColor: '#0284c7' },
+        { position: playedMove.to, color: 'rgba(2, 132, 199, 0.22)', borderColor: '#0284c7' }
+      );
+    } else if (currentEval.badge === 'best') {
+      highlightedSquares.push(
+        { position: playedMove.from, color: 'rgba(22, 163, 74, 0.20)', borderColor: '#16a34a' },
+        { position: playedMove.to, color: 'rgba(22, 163, 74, 0.26)', borderColor: '#16a34a' }
+      );
+    }
+  }
 
   return (
     <div className="review-layout">
@@ -250,7 +282,8 @@ export const GameReview: React.FC<GameReviewProps> = ({ match, onBack, themeMode
                 isFlipped={match.playerColor === 'black'}
                 theme="theme-default"
                 arrow={arrow}
-                bestMoveBadgePosition={bestMoveBadgePos}
+                reviewBadge={reviewBadge}
+                highlightedSquares={highlightedSquares}
                 onSquareClick={() => {}}
               />
             </div>

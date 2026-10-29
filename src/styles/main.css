@@ -184,9 +184,10 @@ button:disabled {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1.5rem;
+  padding: 0;
   overflow: hidden;
   box-sizing: border-box;
+  position: relative;
 }
 
 .game-main-area {
