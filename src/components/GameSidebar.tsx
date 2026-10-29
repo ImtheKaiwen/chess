@@ -1,0 +1,392 @@
+import React, { useEffect, useRef } from 'react';
+import type { MoveRecord } from '../engine/types';
+import {
+  RotateCcw,
+  RotateCw,
+  ArrowUpDown,
+  Volume2,
+  VolumeX,
+  Sun,
+  Moon,
+  Home,
+  Copy,
+  Flag,
+  Handshake,
+  ScrollText,
+  Loader2,
+  ChevronRight,
+  ChevronLeft,
+  Box
+} from 'lucide-react';
+
+interface GameSidebarProps {
+  isOpen: boolean;
+  onToggleOpen: () => void;
+  themeMode: 'light' | 'dark';
+  onToggleTheme: () => void;
+  isMuted: boolean;
+  onToggleSound: () => void;
+  viewMode: '2d' | '3d';
+  onToggleViewMode: () => void;
+  canUndo: boolean;
+  canRedo: boolean;
+  onUndo: () => void;
+  onRedo: () => void;
+  onFlipBoard: () => void;
+  onReturnToMenu: () => void;
+  moveHistory: MoveRecord[];
+  evalScore: number;
+  isAiThinking: boolean;
+  aiDifficulty?: string;
+  onCopyFEN: () => void;
+  onCopyPGN: () => void;
+  onResign: () => void;
+  onOfferDraw: () => void;
+  isGameOver: boolean;
+}
+
+export const GameSidebar: React.FC<GameSidebarProps> = ({
+  isOpen,
+  onToggleOpen,
+  themeMode,
+  onToggleTheme,
+  isMuted,
+  onToggleSound,
+  viewMode,
+  onToggleViewMode,
+  canUndo,
+  canRedo,
+  onUndo,
+  onRedo,
+  onFlipBoard,
+  onReturnToMenu,
+  moveHistory,
+  evalScore,
+  isAiThinking,
+  aiDifficulty,
+  onCopyFEN,
+  onCopyPGN,
+  onResign,
+  onOfferDraw,
+  isGameOver
+}) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const logoSrc = themeMode === 'light' ? './kaiwen-logo-dark.png' : './kaiwen-logo-white.png';
+
+  // Auto scroll to bottom of move list
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.scrollTop = containerRef.current.scrollHeight;
+    }
+  }, [moveHistory.length]);
+
+  // Group moves into turn pairs
+  const rows: { turn: number; white: string; black?: string }[] = [];
+  for (let i = 0; i < moveHistory.length; i += 2) {
+    rows.push({
+      turn: Math.floor(i / 2) + 1,
+      white: moveHistory[i].san,
+      black: moveHistory[i + 1]?.san
+    });
+  }
+
+  // Clamped eval bar width (-10 to +10 range)
+  const clamped = Math.max(-10, Math.min(10, evalScore));
+  const whitePercent = 50 + clamped * 4.5;
+  const scoreFormatted = evalScore > 0 ? `+${evalScore.toFixed(1)}` : evalScore.toFixed(1);
+
+  return (
+    <>
+      {/* ------------------------------------------------------
+          FLOATING COMPACT VERTICAL DOCK (When drawer is closed)
+          ------------------------------------------------------ */}
+      {!isOpen && (
+        <div className="floating-edge-dock">
+          {/* Main open handle with move badge */}
+          <button
+            type="button"
+            className="dock-item-btn dock-btn-expand"
+            onClick={onToggleOpen}
+            data-tooltip="Hamle Listesini Aç"
+          >
+            <ChevronLeft size={16} />
+            <ScrollText size={15} />
+            {moveHistory.length > 0 && (
+              <span className="dock-move-badge">{moveHistory.length}</span>
+            )}
+          </button>
+
+          <div className="dock-divider" />
+
+          {/* Quick Action Icons */}
+          <button
+            type="button"
+            className="dock-item-btn"
+            onClick={onUndo}
+            disabled={!canUndo}
+            data-tooltip="Geri Al (Ctrl+Z)"
+          >
+            <RotateCcw size={15} />
+          </button>
+
+          <button
+            type="button"
+            className="dock-item-btn"
+            onClick={onRedo}
+            disabled={!canRedo}
+            data-tooltip="İleri Al (Ctrl+Y)"
+          >
+            <RotateCw size={15} />
+          </button>
+
+          <button
+            type="button"
+            className="dock-item-btn"
+            onClick={onFlipBoard}
+            data-tooltip="Tahtayı Çevir (F)"
+          >
+            <ArrowUpDown size={15} />
+          </button>
+
+          <button
+            type="button"
+            className={`dock-item-btn ${viewMode === '3d' ? 'active' : ''}`}
+            onClick={onToggleViewMode}
+            data-tooltip={viewMode === '3d' ? '2D Tahtaya Geç' : '3D Three.js Sahnesine Geç'}
+          >
+            <Box size={15} />
+          </button>
+
+          <div className="dock-divider" />
+
+          <button
+            type="button"
+            className="dock-item-btn"
+            onClick={onToggleTheme}
+            data-tooltip={themeMode === 'light' ? 'Koyu Tema' : 'Açık Tema'}
+          >
+            {themeMode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+          </button>
+
+          <button
+            type="button"
+            className={`dock-item-btn ${isMuted ? '' : 'active'}`}
+            onClick={onToggleSound}
+            data-tooltip={isMuted ? 'Sesi Aç' : 'Sesi Kapat'}
+          >
+            {isMuted ? <VolumeX size={15} /> : <Volume2 size={15} />}
+          </button>
+
+          <button
+            type="button"
+            className="dock-item-btn"
+            onClick={onReturnToMenu}
+            data-tooltip="Ana Menüye Dön"
+          >
+            <Home size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* ------------------------------------------------------
+          SLIDE-OUT FLOATING DRAWER PANEL (When open)
+          ------------------------------------------------------ */}
+      <aside className={`game-drawer ${isOpen ? 'drawer-open' : 'drawer-closed'}`}>
+        {/* Drawer Header */}
+        <div className="drawer-header">
+          <div className="drawer-brand">
+            <img
+              src={logoSrc}
+              alt="KAIWEN"
+              className="drawer-logo"
+              onError={e => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+            <span className="drawer-title">KAIWEN</span>
+          </div>
+
+          <div className="drawer-header-actions">
+            <button
+              type="button"
+              className="btn-drawer-header"
+              onClick={onReturnToMenu}
+              title="Ana Menüye Dön"
+            >
+              <Home size={14} />
+              <span>Menü</span>
+            </button>
+
+            <button
+              type="button"
+              className="btn-drawer-collapse"
+              onClick={onToggleOpen}
+              title="Paneli Gizle"
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+        </div>
+
+        {/* Action Toolbar */}
+        <div className="drawer-toolbar">
+          <button
+            type="button"
+            className="btn-drawer-tool"
+            onClick={onUndo}
+            disabled={!canUndo}
+            title="Hamle Geri Al (Ctrl+Z)"
+          >
+            <RotateCcw size={13} />
+            <span>Geri</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-drawer-tool"
+            onClick={onRedo}
+            disabled={!canRedo}
+            title="Hamle İleri Al (Ctrl+Y)"
+          >
+            <RotateCw size={13} />
+            <span>İleri</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-drawer-tool"
+            onClick={onFlipBoard}
+            title="Tahtayı Çevir (F)"
+          >
+            <ArrowUpDown size={13} />
+            <span>Çevir</span>
+          </button>
+
+          <button
+            type="button"
+            className={`btn-drawer-tool ${viewMode === '3d' ? 'active' : ''}`}
+            onClick={onToggleViewMode}
+            title={viewMode === '3d' ? '2D Moduna Geç' : '3D Three.js Sahnesine Geç'}
+          >
+            <Box size={13} />
+            <span>{viewMode === '3d' ? '3D' : '2D'}</span>
+          </button>
+
+          <button
+            type="button"
+            className="btn-drawer-tool"
+            onClick={onToggleTheme}
+            title={themeMode === 'light' ? 'Koyu Tema' : 'Açık Tema'}
+          >
+            {themeMode === 'light' ? <Moon size={13} /> : <Sun size={13} />}
+          </button>
+
+          <button
+            type="button"
+            className={`btn-drawer-tool ${isMuted ? '' : 'active'}`}
+            onClick={onToggleSound}
+            title={isMuted ? 'Sesi Aç (M)' : 'Sesi Kapat (M)'}
+          >
+            {isMuted ? <VolumeX size={13} /> : <Volume2 size={13} />}
+          </button>
+        </div>
+
+        {/* Integrated Evaluation Box */}
+        <div className="drawer-eval-card">
+          <div className="eval-row-meta">
+            <span className="eval-label">Pozisyon Analizi</span>
+            <div className="eval-meta-right">
+              {aiDifficulty && (
+                <span className="eval-ai-pill">Stockfish ({aiDifficulty})</span>
+              )}
+              {isAiThinking ? (
+                <span className="eval-thinking-tag">
+                  <Loader2 size={11} className="spin-icon" /> Düşünüyor
+                </span>
+              ) : (
+                <span className="eval-score-num">{scoreFormatted}</span>
+              )}
+            </div>
+          </div>
+
+          <div className="eval-bar-track">
+            <div className="eval-bar-fill" style={{ width: `${whitePercent}%` }} />
+          </div>
+        </div>
+
+        {/* Move History Section */}
+        <div className="drawer-history-section">
+          <div className="history-sub-header">
+            <span className="history-col-num">#</span>
+            <span className="history-col-turn">Beyaz</span>
+            <span className="history-col-turn">Siyah</span>
+          </div>
+
+          <div ref={containerRef} className="drawer-moves-scroll">
+            {rows.length === 0 ? (
+              <div className="empty-moves-notice">
+                <span>Oyun başladı. İlk hamlenizi yapın.</span>
+              </div>
+            ) : (
+              rows.map(row => (
+                <div key={row.turn} className="move-table-row">
+                  <span className="move-col-index">{row.turn}.</span>
+                  <span className="move-col-notation white-move">{row.white}</span>
+                  <span className="move-col-notation black-move">{row.black || ''}</span>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Drawer Footer Actions */}
+        <div className="drawer-footer">
+          <div className="footer-export-row">
+            <button
+              type="button"
+              className="btn-export-code"
+              onClick={onCopyFEN}
+              title="Mevcut FEN Notasyonunu Kopyala"
+            >
+              <Copy size={12} />
+              <span>FEN</span>
+            </button>
+            <button
+              type="button"
+              className="btn-export-code"
+              onClick={onCopyPGN}
+              title="Tüm PGN Hamle Notasyonunu Kopyala"
+            >
+              <Copy size={12} />
+              <span>PGN</span>
+            </button>
+          </div>
+
+          {!isGameOver && (
+            <div className="footer-game-decisions">
+              <button
+                type="button"
+                className="btn-game-decision draw"
+                onClick={onOfferDraw}
+                title="Beraberlik Teklif Et"
+              >
+                <Handshake size={13} />
+                <span>Berabere</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-game-decision resign"
+                onClick={onResign}
+                title="Oyunu Terk Et"
+              >
+                <Flag size={13} />
+                <span>Terk Et</span>
+              </button>
+            </div>
+          )}
+        </div>
+      </aside>
+    </>
+  );
+};

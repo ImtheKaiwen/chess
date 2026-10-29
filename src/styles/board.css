@@ -1,0 +1,196 @@
+/* ============================================================
+   CHESSBOARD & SQUARE STYLING - ZERO LAYOUT SHIFT GUARANTEED
+   ============================================================ */
+
+.board-column {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  height: 100%;
+  max-height: 100vh;
+}
+
+.board-container {
+  position: relative;
+  /* Mathematically calculated to NEVER cause page scroll on any screen */
+  width: min(calc(100vh - 130px), calc(100vw - 390px), 540px);
+  height: min(calc(100vh - 130px), calc(100vw - 390px), 540px);
+  aspect-ratio: 1 / 1;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: var(--shadow-lg), 0 0 0 1px var(--border-subtle);
+  background: var(--bg-surface);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  flex-shrink: 0;
+}
+
+@media (max-width: 900px) {
+  .board-container {
+    width: min(88vw, 460px);
+    height: min(88vw, 460px);
+  }
+}
+
+.chessboard-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  grid-template-rows: repeat(8, 1fr);
+  width: 100%;
+  height: 100%;
+  user-select: none;
+}
+
+/* Individual Square */
+.square {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  cursor: pointer;
+  transition: background-color 0.12s ease;
+}
+
+/* Square Coloring */
+.square.light-square {
+  background-color: var(--board-light);
+}
+.square.dark-square {
+  background-color: var(--board-dark);
+}
+
+/* Coordinate Labels on Board Edges */
+.coord-label {
+  position: absolute;
+  font-size: 10px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+  pointer-events: none;
+  opacity: 0.6;
+}
+
+.coord-file {
+  bottom: 2px;
+  right: 3px;
+}
+
+.coord-rank {
+  top: 2px;
+  left: 3px;
+}
+
+.square.light-square .coord-label {
+  color: var(--text-secondary);
+}
+.square.dark-square .coord-label {
+  color: var(--text-secondary);
+}
+
+/* Selected Square - Pure Inset Highlight, No geometry change */
+.square.is-selected {
+  background-color: var(--board-selected) !important;
+  box-shadow: inset 0 0 0 2px var(--btn-primary-bg) !important;
+}
+
+/* Last Move Indicator */
+.square.is-last-move {
+  background-color: var(--board-last-move) !important;
+}
+
+/* King in Check Warning - Energetic radial pulse */
+.square.is-in-check {
+  background: radial-gradient(circle, rgba(239, 68, 68, 0.75) 0%, rgba(239, 68, 68, 0.25) 60%, transparent 75%) !important;
+  animation: check-pulse 1.8s infinite ease-in-out;
+}
+
+@keyframes check-pulse {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.02); filter: brightness(1.25); }
+}
+
+/* Legal Move Hints */
+.move-hint-dot {
+  position: absolute;
+  width: 26%;
+  height: 26%;
+  border-radius: 50%;
+  background: var(--board-hint-dot);
+  pointer-events: none;
+  z-index: 2;
+  transition: transform 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.square:hover .move-hint-dot {
+  transform: scale(1.25);
+  background: var(--text-primary);
+  opacity: 0.8;
+}
+
+.move-hint-capture-ring {
+  position: absolute;
+  inset: 4px;
+  border-radius: 50%;
+  border: 3.5px solid rgba(239, 68, 68, 0.85);
+  box-shadow: 0 0 8px rgba(239, 68, 68, 0.35);
+  pointer-events: none;
+  z-index: 2;
+  animation: capture-ring 1.8s infinite ease-in-out;
+}
+
+@keyframes capture-ring {
+  0%, 100% { transform: scale(1); opacity: 0.85; }
+  50% { transform: scale(0.96); opacity: 1; }
+}
+
+/* Smooth Piece Animations */
+.piece-container {
+  position: relative;
+  width: 82%;
+  height: 82%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: transform 0.16s cubic-bezier(0.2, 0.8, 0.2, 1);
+  pointer-events: none;
+  animation: piece-appear 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes piece-appear {
+  from {
+    transform: scale(0.85);
+    opacity: 0.6;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.square:hover .piece-container {
+  transform: translateY(-2px) scale(1.05);
+}
+
+.square:active .piece-container {
+  transform: translateY(0) scale(0.98);
+}
+
+@keyframes piece-slide {
+  from {
+    transform: translate(var(--slide-x), var(--slide-y));
+  }
+  to {
+    transform: translate(0, 0);
+  }
+}
+
+.piece-container.is-sliding {
+  animation: piece-slide 0.24s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+  z-index: 10;
+}
+
