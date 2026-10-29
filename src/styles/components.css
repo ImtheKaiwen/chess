@@ -1633,64 +1633,51 @@
   z-index: 1 !important;
 }
 
-/* Edge-Attached Player Cards in 3D Mode */
-.game-viewport.mode-3d .dock-card-wrap.top-dock {
+/* Edge-Attached Player Cards in both 2D and 3D Mode */
+.dock-card-wrap.top-dock {
   position: absolute;
   top: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: none;
+  display: flex;
+  justify-content: center;
   z-index: 30;
-  width: auto;
-  min-width: 460px;
-  max-width: calc(100% - 120px);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
-.game-viewport.mode-3d .dock-card-wrap.top-dock .player-card {
+.dock-card-wrap.top-dock .player-card {
+  pointer-events: auto;
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
   border-top: none !important;
   border-bottom-left-radius: 16px !important;
   border-bottom-right-radius: 16px !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
-.game-viewport.mode-3d .dock-card-wrap.bottom-dock {
+.dock-card-wrap.bottom-dock {
   position: absolute;
   bottom: 0;
-  left: 50%;
-  transform: translateX(-50%);
+  left: 0;
+  right: 0;
+  width: 100%;
+  max-width: none;
+  display: flex;
+  justify-content: center;
   z-index: 30;
-  width: auto;
-  min-width: 460px;
-  max-width: calc(100% - 120px);
-  pointer-events: auto;
+  pointer-events: none;
 }
 
-.game-viewport.mode-3d .dock-card-wrap.bottom-dock .player-card {
+.dock-card-wrap.bottom-dock .player-card {
+  pointer-events: auto;
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
   border-bottom: none !important;
   border-top-left-radius: 16px !important;
   border-top-right-radius: 16px !important;
-  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.12);
-}
-
-/* Edge-Attached Player Cards in 2D Mode */
-.dock-card-wrap.top-dock .player-card {
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  border-top: none !important;
-  border-bottom-left-radius: 14px !important;
-  border-bottom-right-radius: 14px !important;
-}
-
-.dock-card-wrap.bottom-dock .player-card {
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  border-bottom: none !important;
-  border-top-left-radius: 14px !important;
-  border-top-right-radius: 14px !important;
+  box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .game-viewport.mode-3d .player-card {
