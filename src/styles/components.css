@@ -104,22 +104,25 @@
 }
 
 .sidebar-toggle-btn[data-tooltip]::after {
-  left: auto !important;
-  right: 0 !important;
-  top: calc(100% + 8px) !important;
+  left: calc(100% + 10px) !important;
+  right: auto !important;
+  top: 50% !important;
   bottom: auto !important;
-  transform: none !important;
+  transform: translateY(-50%) scale(0.95) !important;
+}
+.sidebar-toggle-btn[data-tooltip]:hover::after {
+  transform: translateY(-50%) scale(1) !important;
 }
 .sidebar-toggle-btn[data-tooltip]::before {
-  left: auto !important;
-  right: 8px !important;
-  top: calc(100% + 3px) !important;
+  left: calc(100% + 4px) !important;
+  right: auto !important;
+  top: 50% !important;
   bottom: auto !important;
-  transform: none !important;
-  border-bottom-color: #18181b !important;
-  border-top-color: transparent !important;
+  transform: translateY(-50%) !important;
+  border-right-color: #18181b !important;
   border-left-color: transparent !important;
-  border-right-color: transparent !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
 }
 
 /* ------------------------------------------------------------
@@ -1176,7 +1179,7 @@
   right: 14px;
   top: 14px;
   bottom: 14px;
-  width: 320px;
+  width: 360px;
   background: var(--bg-surface);
   border: 1px solid var(--border-subtle);
   border-radius: var(--radius-lg, 16px);
@@ -1270,11 +1273,12 @@
 .drawer-toolbar {
   display: flex;
   align-items: center;
-  padding: 0.45rem 0.65rem;
+  padding: 0.5rem 0.65rem;
   gap: 0.35rem;
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-subtle);
-  overflow-x: auto;
+  overflow-x: hidden;
+  flex-wrap: nowrap;
 }
 
 .btn-drawer-tool {
@@ -1500,6 +1504,13 @@
 /* ------------------------------------------------------------
    7. 3D THREE.JS CANVAS CONTAINER & CAMERA CONTROLS
    ------------------------------------------------------------ */
+.dock-card-wrap {
+  width: 100%;
+  max-width: 540px;
+  display: flex;
+  justify-content: center;
+}
+
 .three-board-wrapper {
   position: relative;
   width: 100%;
@@ -1533,6 +1544,7 @@
   border-radius: 999px;
   border: 1px solid rgba(255, 255, 255, 0.15);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  z-index: 20;
 }
 
 .three-btn-cam {
@@ -1557,6 +1569,120 @@
 .three-btn-cam.active {
   background: #ffffff;
   color: #18181b;
+}
+
+/* FULLSCREEN 3D MODE (Three.js Canvas Fills Whole Screen) */
+.game-viewport.mode-3d {
+  position: relative;
+  overflow: hidden;
+}
+
+.game-viewport.mode-3d .game-main-area {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  max-width: none;
+}
+
+.game-viewport.mode-3d .board-column-3d {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  display: block !important;
+}
+
+.game-viewport.mode-3d .board-column-3d .board-container {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  max-width: none !important;
+  max-height: none !important;
+  aspect-ratio: unset !important;
+  border: none !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  z-index: 1 !important;
+}
+
+/* Floating Attached Player Cards in 3D Mode */
+.game-viewport.mode-3d .dock-card-wrap.top-dock {
+  position: absolute;
+  top: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: auto;
+  min-width: 460px;
+  max-width: calc(100% - 120px);
+  pointer-events: auto;
+}
+
+.game-viewport.mode-3d .dock-card-wrap.bottom-dock {
+  position: absolute;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 30;
+  width: auto;
+  min-width: 460px;
+  max-width: calc(100% - 120px);
+  pointer-events: auto;
+}
+
+.game-viewport.mode-3d .player-profile-pill {
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12), 0 2px 6px rgba(0, 0, 0, 0.05);
+  border-radius: 999px;
+  padding: 0.5rem 1rem;
+}
+
+.dark .game-viewport.mode-3d .player-profile-pill {
+  background: rgba(24, 24, 27, 0.88);
+  border-color: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.55), 0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* 3D Camera Controls floating on left side */
+.game-viewport.mode-3d .three-camera-controls {
+  position: absolute;
+  left: 20px;
+  top: 50%;
+  bottom: auto;
+  transform: translateY(-50%);
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.45rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-subtle);
+  box-shadow: var(--shadow-modal);
+  z-index: 35;
+}
+
+.dark .game-viewport.mode-3d .three-camera-controls {
+  background: rgba(24, 24, 27, 0.85);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.game-viewport.mode-3d .three-btn-cam {
+  color: var(--text-secondary);
+}
+
+.game-viewport.mode-3d .three-btn-cam.active {
+  background: var(--btn-primary-bg);
+  color: var(--btn-primary-text);
 }
 
 /* ------------------------------------------------------------
@@ -1786,13 +1912,13 @@
 
 /* Match History Modal List */
 .history-modal-card {
-  max-width: 580px;
+  max-width: 620px;
 }
 
 .history-count-badge {
-  font-size: 0.7rem;
+  font-size: 0.72rem;
   font-weight: 700;
-  padding: 0.1rem 0.45rem;
+  padding: 0.15rem 0.55rem;
   border-radius: 999px;
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
@@ -1802,9 +1928,9 @@
 .btn-clear-modal {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
-  padding: 0.35rem 0.65rem;
-  font-size: 0.74rem;
+  gap: 0.35rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.76rem;
   font-weight: 600;
   border-radius: var(--radius-sm);
   color: #ef4444;
@@ -1824,8 +1950,8 @@
   flex-direction: column;
   align-items: center;
   text-align: center;
-  padding: 3rem 1rem;
-  gap: 0.45rem;
+  padding: 3.5rem 1.5rem;
+  gap: 0.55rem;
 }
 
 .empty-icon {
@@ -1835,52 +1961,56 @@
 }
 
 .empty-title {
-  font-size: 0.95rem;
+  font-size: 1rem;
   font-weight: 700;
   color: var(--text-primary);
   margin: 0;
 }
 
 .empty-desc {
-  font-size: 0.78rem;
+  font-size: 0.82rem;
   color: var(--text-secondary);
-  max-width: 340px;
+  max-width: 360px;
   margin: 0;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 .history-modal-list {
   display: flex;
   flex-direction: column;
-  gap: 0.45rem;
+  gap: 0.65rem;
 }
 
 .history-card-item {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.75rem 0.85rem;
-  border-radius: var(--radius-sm);
+  padding: 0.85rem 1.1rem;
+  border-radius: var(--radius-md, 12px);
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
-  transition: all 0.14s ease;
+  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
 }
 
 .history-card-item:hover {
   background: var(--bg-hover);
   border-color: var(--border-medium);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .history-card-left {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0.85rem;
 }
 
 .result-indicator-bar {
   width: 4px;
-  height: 32px;
+  height: 36px;
   border-radius: 999px;
+  flex-shrink: 0;
 }
 
 .result-indicator-bar.win {
@@ -1898,17 +2028,17 @@
 .history-card-info {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
+  gap: 0.25rem;
 }
 
 .history-opp-row {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.6rem;
 }
 
 .history-opp-name {
-  font-size: 0.86rem;
+  font-size: 0.92rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -1916,23 +2046,44 @@
 .history-meta-sub {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
+  gap: 0.55rem;
+  font-size: 0.74rem;
   color: var(--text-muted);
 }
 
-.meta-sub-item {
+.history-card-right-action {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.6rem;
 }
 
-.meta-separator {
-  opacity: 0.5;
+.inspect-pill {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  background: rgba(99, 102, 241, 0.1);
+  border: 1px solid rgba(99, 102, 241, 0.25);
+  color: #6366f1;
+  font-size: 0.75rem;
+  font-weight: 600;
+  transition: all 0.15s ease;
+}
+
+.history-card-item:hover .inspect-pill {
+  background: #6366f1;
+  color: #ffffff;
 }
 
 .history-card-arrow {
   color: var(--text-muted);
+  transition: transform 0.15s ease;
+}
+
+.history-card-item:hover .history-card-arrow {
+  transform: translateX(2px);
+  color: var(--text-primary);
 }
 
 .modal-footer {
@@ -2006,13 +2157,18 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.35rem;
+  padding: 0.5rem 1.4rem;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  box-shadow: var(--shadow-sm);
 }
 
 .review-title-main {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
 .trophy-gold {
@@ -2020,7 +2176,7 @@
 }
 
 .review-opp-name {
-  font-size: 0.92rem;
+  font-size: 0.98rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -2028,9 +2184,9 @@
 .review-meta-row {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
-  font-size: 0.72rem;
-  color: var(--text-muted);
+  gap: 0.75rem;
+  font-size: 0.76rem;
+  color: var(--text-secondary);
 }
 
 .review-header-badge {
@@ -2117,7 +2273,7 @@
 }
 
 .review-sidebar-col {
-  width: 340px;
+  width: 380px;
   background: var(--bg-surface);
   border-left: 1px solid var(--border-subtle);
   display: flex;
@@ -2126,18 +2282,18 @@
 }
 
 .review-eval-card {
-  padding: 1.15rem;
+  padding: 1.35rem 1.45rem;
   background: var(--bg-surface-elevated);
   border-bottom: 1px solid var(--border-subtle);
   display: flex;
   flex-direction: column;
-  gap: 0.85rem;
+  gap: 1.1rem;
 }
 
 .eval-card-header {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.55rem;
 }
 
 .sparkle-accent {
@@ -2145,7 +2301,7 @@
 }
 
 .eval-card-title {
-  font-size: 0.86rem;
+  font-size: 0.94rem;
   font-weight: 700;
   color: var(--text-primary);
 }
@@ -2168,10 +2324,10 @@
 .eval-badge-pill {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
-  padding: 0.4rem 0.8rem;
+  gap: 0.45rem;
+  padding: 0.5rem 1rem;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.84rem;
   font-weight: 700;
   width: fit-content;
 }
@@ -2203,26 +2359,27 @@
 .eval-comparison-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.65rem;
+  gap: 0.85rem;
 }
 
 .eval-comp-cell {
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.55rem 0.75rem;
+  gap: 0.3rem;
+  padding: 0.85rem 1rem;
   background: var(--bg-surface);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md, 10px);
   border: 1px solid var(--border-subtle);
 }
 
 .comp-cell-label {
-  font-size: 0.68rem;
+  font-size: 0.72rem;
   color: var(--text-muted);
+  font-weight: 500;
 }
 
 .comp-cell-val {
-  font-size: 0.95rem;
+  font-size: 1.05rem;
   font-weight: 800;
   font-family: var(--font-mono);
 }
@@ -2247,6 +2404,35 @@
   font-weight: 700;
   font-family: var(--font-mono);
   color: var(--text-primary);
+}
+
+.eval-guidance-box {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  line-height: 1.4;
+  background: rgba(99, 102, 241, 0.08);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  color: #6366f1;
+}
+
+.eval-guidance-box.best {
+  background: rgba(34, 197, 94, 0.09);
+  border-color: rgba(34, 197, 94, 0.25);
+  color: #16a34a;
+}
+
+.eval-guidance-box.arrow {
+  background: rgba(14, 165, 233, 0.09);
+  border-color: rgba(14, 165, 233, 0.25);
+  color: #0284c7;
+}
+
+.guidance-icon {
+  flex-shrink: 0;
 }
 
 .review-moves-container {

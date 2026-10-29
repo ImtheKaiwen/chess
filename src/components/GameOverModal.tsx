@@ -13,6 +13,7 @@ interface GameOverModalProps {
   blackCapturedCount: number;
   onNewGame: () => void;
   onClose: () => void;
+  onInspect?: () => void;
 }
 
 export const GameOverModal: React.FC<GameOverModalProps> = ({
@@ -23,7 +24,8 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   whiteCapturedCount,
   blackCapturedCount,
   onNewGame,
-  onClose
+  onClose,
+  onInspect
 }) => {
   useEffect(() => {
     if (status === 'checkmate') {
@@ -92,7 +94,7 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
             <span>Yeni Oyun Başlat</span>
           </button>
 
-          <button className="btn-secondary" onClick={onClose}>
+          <button className="btn-secondary" onClick={onInspect || onClose}>
             <Eye size={16} />
             <span>Tahtayı İncele</span>
           </button>

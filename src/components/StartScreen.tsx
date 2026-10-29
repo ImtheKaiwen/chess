@@ -15,7 +15,6 @@ import {
   PanelLeftClose,
   PanelLeft,
   History,
-  Trash2,
   Settings,
   ChevronRight,
   ChevronLeft,
@@ -25,7 +24,6 @@ import {
 import type { AIDifficulty } from '../services/aiService';
 import { DIFFICULTY_CONFIG } from '../services/aiService';
 import type { PlayerStats, MatchHistoryItem } from '../services/statsService';
-import { clearMatchHistory } from '../services/statsService';
 import type { Color } from '../engine/types';
 import type { Language } from '../utils/i18n';
 import { translations } from '../utils/i18n';
@@ -70,7 +68,7 @@ export const StartScreen: React.FC<StartScreenProps> = ({
   onOpenHistory,
   onSelectMatch,
   onStartGame,
-  onRefreshHistory
+  onRefreshHistory: _onRefreshHistory
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(true);
   const [step, setStep] = useState<number>(1);
@@ -109,13 +107,6 @@ export const StartScreen: React.FC<StartScreenProps> = ({
       playerColor,
       timeLimit
     });
-  };
-
-  const handleClearHistory = () => {
-    if (window.confirm('Tüm maç geçmişini silmek istediğinize emin misiniz?')) {
-      clearMatchHistory();
-      onRefreshHistory();
-    }
   };
 
   return (
@@ -173,16 +164,6 @@ export const StartScreen: React.FC<StartScreenProps> = ({
                   <History size={14} />
                   <span>{t.matchHistory}</span>
                 </div>
-                {matchHistory.length > 0 && (
-                  <button
-                    type="button"
-                    className="btn-clear-history"
-                    onClick={handleClearHistory}
-                    data-tooltip="Geçmişi Temizle"
-                  >
-                    <Trash2 size={13} />
-                  </button>
-                )}
               </div>
 
               <div className="history-items-scroll">

@@ -216,6 +216,17 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
   const piecesGroupRef = useRef<THREE.Group | null>(null);
   const highlightsGroupRef = useRef<THREE.Group | null>(null);
 
+  const movingAnimRef = useRef<{
+    mesh: THREE.Group;
+    startX: number;
+    startZ: number;
+    targetX: number;
+    targetZ: number;
+    startTime: number;
+    duration: number;
+  } | null>(null);
+  const prevLastMoveRef = useRef<{ from: Position; to: Position } | null>(null);
+
   const [cameraAngle, setCameraAngle] = useState<'perspective' | 'top' | 'angled'>('perspective');
 
   // Convert board (row, col) to 3D world (X, Z) coordinates
@@ -352,6 +363,27 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
     let animId: number;
     const animate = () => {
       animId = requestAnimationFrame(animate);
+
+      // Smooth Piece Animation Arc
+      if (movingAnimRef.current) {
+        const anim = movingAnimRef.current;
+        const now = performance.now();
+        const progress = Math.min(1, (now - anim.startTime) / anim.duration);
+        // Ease out cubic
+        const ease = 1 - Math.pow(1 - progress, 3);
+        const curX = anim.startX + (anim.targetX - anim.startX) * ease;
+        const curZ = anim.startZ + (anim.targetZ - anim.startZ) * ease;
+        // Parabolic jump arc in Y (up to 0.65 units high)
+        const arcY = Math.sin(progress * Math.PI) * 0.65;
+
+        anim.mesh.position.set(curX, 0.04 + arcY, curZ);
+
+        if (progress >= 1) {
+          anim.mesh.position.set(anim.targetX, 0.04, anim.targetZ);
+          movingAnimRef.current = null;
+        }
+      }
+
       controls.update();
       renderer.render(scene, camera);
     };
@@ -398,6 +430,14 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
       metalness: 0.15
     });
 
+    const isNewMove =
+      lastMove &&
+      (!prevLastMoveRef.current ||
+        prevLastMoveRef.current.from.row !== lastMove.from.row ||
+        prevLastMoveRef.current.from.col !== lastMove.from.col ||
+        prevLastMoveRef.current.to.row !== lastMove.to.row ||
+        prevLastMoveRef.current.to.col !== lastMove.to.col);
+
     for (let r = 0; r < 8; r++) {
       for (let c = 0; c < 8; c++) {
         const piece = board[r][c];
@@ -405,7 +445,27 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
 
         const pieceMesh = createPieceMesh(piece.type, piece.color, whiteMat, blackMat);
         const { x, z } = boardToWorld(r, c);
-        pieceMesh.position.set(x, 0.04, z);
+
+        const isDestinationOfMove =
+          isNewMove &&
+          r === lastMove.to.row &&
+          c === lastMove.to.col;
+
+        if (isDestinationOfMove) {
+          const fromWorld = boardToWorld(lastMove.from.row, lastMove.from.col);
+          pieceMesh.position.set(fromWorld.x, 0.04, fromWorld.z);
+          movingAnimRef.current = {
+            mesh: pieceMesh,
+            startX: fromWorld.x,
+            startZ: fromWorld.z,
+            targetX: x,
+            targetZ: z,
+            startTime: performance.now(),
+            duration: 280
+          };
+        } else {
+          pieceMesh.position.set(x, 0.04, z);
+        }
 
         // Turn knights to face opponent
         if (piece.type === 'knight') {
@@ -419,7 +479,9 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
         piecesGroup.add(pieceMesh);
       }
     }
-  }, [board, boardToWorld, isFlipped]);
+
+    prevLastMoveRef.current = lastMove;
+  }, [board, boardToWorld, isFlipped, lastMove]);
 
   // Update Highlights (Selected Square, Legal Moves, Last Move, Check)
   useEffect(() => {
@@ -469,34 +531,34 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
       const isCapture = !!board[m.row][m.col];
 
       if (isCapture) {
-        // Red / Amber capture ring
+        // Elegant rose capture ring
         const ringGeom = new THREE.RingGeometry(0.32, 0.44, 24);
         ringGeom.rotateX(-Math.PI / 2);
         const ringMat = new THREE.MeshBasicMaterial({
-          color: 0xfa5252,
+          color: 0xf43f5e,
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.75
+          opacity: 0.85
         });
         const ringMesh = new THREE.Mesh(ringGeom, ringMat);
         ringMesh.position.set(x, 0.06, z);
         highlights.add(ringMesh);
       } else {
-        // Soft green destination circle
-        const circleGeom = new THREE.CircleGeometry(0.16, 20);
+        // Theme-tailored destination circle (indigo/azure accent)
+        const circleGeom = new THREE.CircleGeometry(0.18, 24);
         circleGeom.rotateX(-Math.PI / 2);
         const circleMat = new THREE.MeshBasicMaterial({
-          color: 0x40c057,
+          color: themeMode === 'light' ? 0x4f46e5 : 0x6366f1,
           side: THREE.DoubleSide,
           transparent: true,
-          opacity: 0.75
+          opacity: 0.8
         });
         const circleMesh = new THREE.Mesh(circleGeom, circleMat);
         circleMesh.position.set(x, 0.06, z);
         highlights.add(circleMesh);
       }
     });
-  }, [selectedSquare, legalMoves, lastMove, isKingInCheck, board, boardToWorld]);
+  }, [selectedSquare, legalMoves, lastMove, isKingInCheck, board, boardToWorld, themeMode]);
 
   // Click Handler with Raycaster
   const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {

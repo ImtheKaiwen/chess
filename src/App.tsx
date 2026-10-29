@@ -725,35 +725,37 @@ export const App: React.FC = () => {
 
       {/* SCREEN 2: GAMEPLAY (ZERO SCROLLING, SLIDE-OUT DRAWER, 2D/3D SUPPORT) */}
       {currentScreen === 'game' && (
-        <div className="game-viewport">
+        <div className={`game-viewport ${viewMode === '3d' ? 'mode-3d' : ''}`}>
           <div className="game-main-area">
             {/* Left Column: Board + Opponent Bar + Player Bar */}
-            <div className="board-column">
+            <div className={`board-column ${viewMode === '3d' ? 'board-column-3d' : ''}`}>
               {/* Opponent Card (Top) */}
-              <PlayerCard
-                color={topColor}
-                name={
-                  gameSettings.mode === 'ai' && topColor !== humanColor
-                    ? `Stockfish AI (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
-                    : topColor === 'white'
-                    ? 'Beyaz Oyuncu'
-                    : 'Siyah Oyuncu'
-                }
-                isTurn={currentTurn === topColor && status === 'active'}
-                isAI={gameSettings.mode === 'ai' && topColor !== humanColor}
-                capturedPieces={
-                  topColor === 'white'
-                    ? capturedSummary.whiteCaptured
-                    : capturedSummary.blackCaptured
-                }
-                advantage={
-                  capturedSummary.advantage.color === topColor
-                    ? capturedSummary.advantage.diff
-                    : 0
-                }
-                timeRemaining={topColor === 'white' ? whiteTime : blackTime}
-                hasTimeLimit={gameSettings.timeLimit > 0}
-              />
+              <div className="dock-card-wrap top-dock">
+                <PlayerCard
+                  color={topColor}
+                  name={
+                    gameSettings.mode === 'ai' && topColor !== humanColor
+                      ? `Stockfish AI (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
+                      : topColor === 'white'
+                      ? 'Beyaz Oyuncu'
+                      : 'Siyah Oyuncu'
+                  }
+                  isTurn={currentTurn === topColor && status === 'active'}
+                  isAI={gameSettings.mode === 'ai' && topColor !== humanColor}
+                  capturedPieces={
+                    topColor === 'white'
+                      ? capturedSummary.whiteCaptured
+                      : capturedSummary.blackCaptured
+                  }
+                  advantage={
+                    capturedSummary.advantage.color === topColor
+                      ? capturedSummary.advantage.diff
+                      : 0
+                  }
+                  timeRemaining={topColor === 'white' ? whiteTime : blackTime}
+                  hasTimeLimit={gameSettings.timeLimit > 0}
+                />
+              </div>
 
               {/* Dynamic Board: 2D or 3D Three.js Scene */}
               <div className="board-container">
@@ -785,30 +787,32 @@ export const App: React.FC = () => {
               </div>
 
               {/* Player Card (Bottom) */}
-              <PlayerCard
-                color={bottomColor}
-                name={
-                  gameSettings.mode === 'ai' && bottomColor !== humanColor
-                    ? `Stockfish AI (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
-                    : bottomColor === 'white'
-                    ? 'Beyaz Oyuncu'
-                    : 'Siyah Oyuncu'
-                }
-                isTurn={currentTurn === bottomColor && status === 'active'}
-                isAI={gameSettings.mode === 'ai' && bottomColor !== humanColor}
-                capturedPieces={
-                  bottomColor === 'white'
-                    ? capturedSummary.whiteCaptured
-                    : capturedSummary.blackCaptured
-                }
-                advantage={
-                  capturedSummary.advantage.color === bottomColor
-                    ? capturedSummary.advantage.diff
-                    : 0
-                }
-                timeRemaining={bottomColor === 'white' ? whiteTime : blackTime}
-                hasTimeLimit={gameSettings.timeLimit > 0}
-              />
+              <div className="dock-card-wrap bottom-dock">
+                <PlayerCard
+                  color={bottomColor}
+                  name={
+                    gameSettings.mode === 'ai' && bottomColor !== humanColor
+                      ? `Stockfish AI (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
+                      : bottomColor === 'white'
+                      ? 'Beyaz Oyuncu'
+                      : 'Siyah Oyuncu'
+                  }
+                  isTurn={currentTurn === bottomColor && status === 'active'}
+                  isAI={gameSettings.mode === 'ai' && bottomColor !== humanColor}
+                  capturedPieces={
+                    bottomColor === 'white'
+                      ? capturedSummary.whiteCaptured
+                      : capturedSummary.blackCaptured
+                  }
+                  advantage={
+                    capturedSummary.advantage.color === bottomColor
+                      ? capturedSummary.advantage.diff
+                      : 0
+                  }
+                  timeRemaining={bottomColor === 'white' ? whiteTime : blackTime}
+                  hasTimeLimit={gameSettings.timeLimit > 0}
+                />
+              </div>
             </div>
 
             {/* Right Column: Slide-Out Drawer with Floating Edge Dock */}
@@ -882,6 +886,23 @@ export const App: React.FC = () => {
             setCurrentScreen('menu');
           }}
           onClose={() => setShowGameOverModal(false)}
+          onInspect={() => {
+            setShowGameOverModal(false);
+            const latestHistory = getMatchHistory();
+            const currentItem: MatchHistoryItem = latestHistory[0] || {
+              id: Date.now().toString(),
+              date: new Date().toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }),
+              opponent: gameSettings.mode === 'ai'
+                ? `Stockfish (${DIFFICULTY_CONFIG[gameSettings.difficulty].label})`
+                : 'İki Kişilik',
+              result: winner === 'draw' ? 'draw' : winner === humanColor ? 'win' : 'loss',
+              totalMoves: moveHistory.length,
+              playerColor: humanColor,
+              moves: [...moveHistory]
+            };
+            setSelectedReviewMatch(currentItem);
+            setCurrentScreen('review');
+          }}
         />
       )}
 

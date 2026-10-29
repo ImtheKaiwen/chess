@@ -20,7 +20,8 @@ import {
   XCircle,
   Bot,
   Calendar,
-  Trophy
+  Trophy,
+  Compass
 } from 'lucide-react';
 
 interface GameReviewProps {
@@ -187,6 +188,17 @@ export const GameReview: React.FC<GameReviewProps> = ({ match, onBack, themeMode
   const currentEval = analysisCache[currentStep];
   const playedMove = currentStep > 0 ? moves[currentStep - 1] : null;
 
+  const isBestMove = currentEval?.badge === 'best';
+  const showArrow = !isBestMove && !!(currentEval?.bestFrom && currentEval?.bestTo);
+  const arrow = showArrow
+    ? {
+        from: currentEval.bestFrom!,
+        to: currentEval.bestTo!,
+        color: '#16a34a'
+      }
+    : null;
+  const bestMoveBadgePos = isBestMove && playedMove ? playedMove.to : null;
+
   return (
     <div className="review-layout">
       {/* Review Header Bar */}
@@ -237,6 +249,8 @@ export const GameReview: React.FC<GameReviewProps> = ({ match, onBack, themeMode
                 isKingInCheck={false}
                 isFlipped={match.playerColor === 'black'}
                 theme="theme-default"
+                arrow={arrow}
+                bestMoveBadgePosition={bestMoveBadgePos}
                 onSquareClick={() => {}}
               />
             </div>
@@ -354,6 +368,19 @@ export const GameReview: React.FC<GameReviewProps> = ({ match, onBack, themeMode
                     </span>
                   </div>
                 )}
+
+                {/* Visual Guidance Box */}
+                {isBestMove ? (
+                  <div className="eval-guidance-box best">
+                    <Sparkles size={14} className="guidance-icon" />
+                    <span>Mükemmel hamle! Taşın üzerinde yeşil yıldız ile gösteriliyor.</span>
+                  </div>
+                ) : showArrow && currentEval?.bestMoveSan ? (
+                  <div className="eval-guidance-box arrow">
+                    <Compass size={14} className="guidance-icon" />
+                    <span>Önerilen hamle (<b>{currentEval.bestMoveSan}</b>) tahtada yeşil ok ile işaretlendi.</span>
+                  </div>
+                ) : null}
               </div>
             )}
           </div>
