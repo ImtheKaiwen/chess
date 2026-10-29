@@ -3,6 +3,8 @@ import confetti from 'canvas-confetti';
 import type { Color, GameStatus } from '../engine/types';
 import { Trophy, RefreshCw, Eye } from 'lucide-react';
 import { formatTime } from '../utils/helpers';
+import type { Language } from '../utils/i18n';
+import { translations } from '../utils/i18n';
 
 interface GameOverModalProps {
   status: GameStatus;
@@ -11,6 +13,7 @@ interface GameOverModalProps {
   gameDuration: number;
   whiteCapturedCount: number;
   blackCapturedCount: number;
+  lang?: Language;
   onNewGame: () => void;
   onClose: () => void;
   onInspect?: () => void;
@@ -23,10 +26,13 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
   gameDuration,
   whiteCapturedCount,
   blackCapturedCount,
+  lang = 'tr',
   onNewGame,
   onClose,
   onInspect
 }) => {
+  const t = translations[lang] || translations.tr;
+
   useEffect(() => {
     if (status === 'checkmate') {
       confetti({
@@ -37,23 +43,52 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
     }
   }, [status]);
 
-  let title = 'Oyun Bitti';
-  let desc = 'Müsabaka tamamlandı.';
+  let title = lang === 'en' ? 'Game Over' : 'Oyun Bitti';
+  let desc = lang === 'en' ? 'Match concluded.' : 'Müsabaka tamamlandı.';
 
   if (status === 'checkmate') {
-    const winnerName = winner === 'white' ? 'Beyaz' : 'Siyah';
-    title = `Şah Mat! ${winnerName} Kazandı! 👑`;
-    desc = `Mükemmel bir taktikle rakip şah sıkıştırıldı ve ${totalMoves} hamlede mat edildi.`;
+    const winnerName =
+      winner === 'white'
+        ? lang === 'en'
+          ? 'White'
+          : 'Beyaz'
+        : lang === 'en'
+        ? 'Black'
+        : 'Siyah';
+    title =
+      lang === 'en'
+        ? `Checkmate! ${winnerName} Won! 👑`
+        : `Şah Mat! ${winnerName} Kazandı! 👑`;
+    desc =
+      lang === 'en'
+        ? `King cornered through brilliant tactics and checkmated in ${totalMoves} moves.`
+        : `Mükemmel bir taktikle rakip şah sıkıştırıldı ve ${totalMoves} hamlede mat edildi.`;
   } else if (status === 'stalemate') {
-    title = 'Pat! Oyun Berabere';
-    desc = 'Sırası gelen oyuncunun yasal bir hamlesi yok ve şah tehdit altında değil.';
+    title = lang === 'en' ? 'Stalemate! Draw' : 'Pat! Oyun Berabere';
+    desc =
+      lang === 'en'
+        ? 'The active player has no legal moves and king is not in check.'
+        : 'Sırası gelen oyuncunun yasal bir hamlesi yok ve şah tehdit altında değil.';
   } else if (status === 'resigned') {
-    const winnerName = winner === 'white' ? 'Beyaz' : 'Siyah';
-    title = `Terk Nedeniyle ${winnerName} Kazandı`;
-    desc = 'Rakip oyuncu oyunu terk etti.';
+    const winnerName =
+      winner === 'white'
+        ? lang === 'en'
+          ? 'White'
+          : 'Beyaz'
+        : lang === 'en'
+        ? 'Black'
+        : 'Siyah';
+    title =
+      lang === 'en'
+        ? `${winnerName} Won by Resignation`
+        : `Terk Nedeniyle ${winnerName} Kazandı`;
+    desc = lang === 'en' ? 'Opponent resigned.' : 'Rakip oyuncu oyunu terk etti.';
   } else if (status === 'draw') {
-    title = 'Karşılıklı Beraberlik';
-    desc = 'Oyuncular karşılıklı olarak beraberlikte anlaştı.';
+    title = lang === 'en' ? 'Mutual Draw' : 'Karşılıklı Beraberlik';
+    desc =
+      lang === 'en'
+        ? 'Players agreed to a mutual draw.'
+        : 'Oyuncular karşılıklı olarak beraberlikte anlaştı.';
   }
 
   return (
@@ -68,35 +103,35 @@ export const GameOverModal: React.FC<GameOverModalProps> = ({
 
         <div className="stats-grid">
           <div className="stat-item">
-            <span className="stat-label">Toplam Hamle</span>
+            <span className="stat-label">{t.totalMovesStat}</span>
             <span className="stat-val">{totalMoves}</span>
           </div>
 
           <div className="stat-item">
-            <span className="stat-label">Oyun Süresi</span>
+            <span className="stat-label">{t.gameDurationStat}</span>
             <span className="stat-val">{formatTime(gameDuration)}</span>
           </div>
 
           <div className="stat-item">
-            <span className="stat-label">Beyazın Aldığı</span>
-            <span className="stat-val">{whiteCapturedCount} Taş</span>
+            <span className="stat-label">{t.whiteCapturedStat}</span>
+            <span className="stat-val">{whiteCapturedCount}</span>
           </div>
 
           <div className="stat-item">
-            <span className="stat-label">Siyahın Aldığı</span>
-            <span className="stat-val">{blackCapturedCount} Taş</span>
+            <span className="stat-label">{t.blackCapturedStat}</span>
+            <span className="stat-val">{blackCapturedCount}</span>
           </div>
         </div>
 
         <div className="modal-actions">
           <button className="btn-primary" onClick={onNewGame}>
             <RefreshCw size={16} />
-            <span>Yeni Oyun Başlat</span>
+            <span>{t.playAgain}</span>
           </button>
 
           <button className="btn-secondary" onClick={onInspect || onClose}>
             <Eye size={16} />
-            <span>Tahtayı İncele</span>
+            <span>{t.reviewBoard}</span>
           </button>
         </div>
       </div>

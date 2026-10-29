@@ -2,6 +2,8 @@ import React from 'react';
 import { X, History, Trash2, Calendar, Trophy, ChevronRight, Eye } from 'lucide-react';
 import type { MatchHistoryItem } from '../services/statsService';
 import { clearMatchHistory } from '../services/statsService';
+import type { Language } from '../utils/i18n';
+import { translations } from '../utils/i18n';
 
 interface MatchHistoryModalProps {
   isOpen: boolean;
@@ -9,6 +11,7 @@ interface MatchHistoryModalProps {
   history: MatchHistoryItem[];
   onRefresh: () => void;
   onClear?: () => void;
+  lang?: Language;
   onSelectMatch?: (match: MatchHistoryItem) => void;
 }
 
@@ -18,9 +21,11 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
   history,
   onRefresh,
   onClear,
+  lang = 'tr',
   onSelectMatch
 }) => {
   if (!isOpen) return null;
+  const t = translations[lang] || translations.tr;
 
   const handleClear = () => {
     clearMatchHistory();
@@ -42,8 +47,10 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
         <div className="modal-header">
           <div className="modal-title-row">
             <History size={18} className="modal-title-icon" />
-            <h2 className="modal-title">Maç Geçmişi</h2>
-            <span className="history-count-badge">{history.length} Maç</span>
+            <h2 className="modal-title">{t.matchHistory}</h2>
+            <span className="history-count-badge">
+              {history.length} {lang === 'en' ? 'Matches' : 'Maç'}
+            </span>
           </div>
           <div className="modal-header-actions">
             {history.length > 0 && (
@@ -51,17 +58,17 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
                 type="button"
                 className="btn-icon-text btn-clear-modal"
                 onClick={handleClear}
-                data-tooltip="Geçmişi Temizle"
+                data-tooltip={t.clearHistory}
               >
                 <Trash2 size={14} />
-                <span>Temizle</span>
+                <span>{lang === 'en' ? 'Clear' : 'Temizle'}</span>
               </button>
             )}
             <button
               type="button"
               className="btn-icon modal-close-btn"
               onClick={onClose}
-              aria-label="Kapat"
+              aria-label={t.close}
             >
               <X size={18} />
             </button>
@@ -72,10 +79,8 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
           {history.length === 0 ? (
             <div className="empty-history-state">
               <Trophy size={36} className="empty-icon" />
-              <p className="empty-title">Henüz Kayıtlı Maç Yok</p>
-              <p className="empty-desc">
-                Stockfish yapay zekası veya bir arkadaşınızla maç tamamladığınızda sonuçlar burada listelenecektir.
-              </p>
+              <p className="empty-title">{t.noRecordedMatches}</p>
+              <p className="empty-desc">{t.noRecordedMatchesDesc}</p>
             </div>
           ) : (
             <div className="history-modal-list">
@@ -120,7 +125,7 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
                   <div className="history-card-right-action">
                     <span className="inspect-pill">
                       <Eye size={12} />
-                      <span>İncele</span>
+                      <span>{lang === 'en' ? 'Review' : 'İncele'}</span>
                     </span>
                     <ChevronRight size={16} className="history-card-arrow" />
                   </div>
@@ -132,7 +137,7 @@ export const MatchHistoryModal: React.FC<MatchHistoryModalProps> = ({
 
         <div className="modal-footer">
           <button type="button" className="btn-modal-primary" onClick={onClose}>
-            Kapat
+            {t.close}
           </button>
         </div>
       </div>

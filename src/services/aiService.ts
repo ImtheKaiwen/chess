@@ -192,3 +192,67 @@ export async function fetchStockfishMove(
     throw error;
   }
 }
+
+/**
+ * Returns top 1 or 2 recommended moves for the given side.
+ * Uses Stockfish API for #1 best move, and smart heuristic evaluation for #2 alternative move.
+ */
+export async function getTopMovesSuggestions(
+  fen: string,
+  difficulty: AIDifficulty,
+  board: Board,
+  color: Color,
+  enPassantTarget: Position | null,
+  count: 1 | 2 = 1
+): Promise<{ from: Position; to: Position; color: string }[]> {
+  try {
+    const primary = await fetchStockfishMove(fen, difficulty, board, color, enPassantTarget);
+    const results: { from: Position; to: Position; color: string }[] = [
+      { from: primary.from, to: primary.to, color: '#0ea5e9' } // Vibrant Cyan for Best Move
+    ];
+
+    if (count === 2) {
+      // Find the second best distinct legal move using positional evaluator
+      const allMoves = getAllLegalMoves(board, color, enPassantTarget);
+      const candidates = allMoves.filter(
+        m => !(m.from.row === primary.from.row && m.from.col === primary.from.col &&
+               m.to.row === primary.to.row && m.to.col === primary.to.col)
+      );
+
+      if (candidates.length > 0) {
+        let bestScore = -999999;
+        let secondBest = candidates[0];
+
+        for (const move of candidates) {
+          let score = 0;
+          const targetPiece = board[move.to.row][move.to.col];
+          const movingPiece = board[move.from.row][move.from.col];
+
+          if (targetPiece) {
+            score += PIECE_VALUES[targetPiece.type] * 10 - (movingPiece ? PIECE_VALUES[movingPiece.type] : 0);
+          }
+          const centerDist = Math.abs(3.5 - move.to.row) + Math.abs(3.5 - move.to.col);
+          score += (7 - centerDist) * 0.5;
+
+          if (score > bestScore) {
+            bestScore = score;
+            secondBest = move;
+          }
+        }
+
+        results.push({
+          from: secondBest.from,
+          to: secondBest.to,
+          color: '#8b5cf6' // Elegant Violet for 2nd best alternative
+        });
+      }
+    }
+
+    return results;
+  } catch {
+    // If network fails, use fallback evaluator
+    const fallback = getLocalFallbackMove(board, color, enPassantTarget, difficulty);
+    if (!fallback) return [];
+    return [{ from: fallback.from, to: fallback.to, color: '#0ea5e9' }];
+  }
+}

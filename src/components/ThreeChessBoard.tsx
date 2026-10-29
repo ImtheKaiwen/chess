@@ -13,6 +13,7 @@ interface ThreeChessBoardProps {
   isKingInCheck: boolean;
   isFlipped: boolean;
   themeMode: 'light' | 'dark';
+  aiHints?: { from: Position; to: Position; color?: string }[];
   onSquareClick: (row: number, col: number) => void;
 }
 
@@ -206,6 +207,7 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
   isKingInCheck,
   isFlipped,
   themeMode,
+  aiHints = [],
   onSquareClick
 }) => {
   const mountRef = useRef<HTMLDivElement>(null);
@@ -558,7 +560,47 @@ export const ThreeChessBoard: React.FC<ThreeChessBoardProps> = ({
         highlights.add(circleMesh);
       }
     });
-  }, [selectedSquare, legalMoves, lastMove, isKingInCheck, board, boardToWorld, themeMode]);
+
+    // 3D AI Move Assistance (Illuminated Cyan Tiles + Floating 3D Arrow)
+    if (aiHints && aiHints.length > 0) {
+      aiHints.forEach(hint => {
+        const fromPos = boardToWorld(hint.from.row, hint.from.col);
+        const toPos = boardToWorld(hint.to.row, hint.to.col);
+
+        // From tile glowing cyan box
+        const hintMat = new THREE.MeshBasicMaterial({
+          color: 0x0ea5e9,
+          transparent: true,
+          opacity: 0.45
+        });
+        const fromMesh = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.088, 0.98), hintMat);
+        fromMesh.position.set(fromPos.x, 0.007, fromPos.z);
+        highlights.add(fromMesh);
+
+        // To tile glowing cyan box
+        const toMesh = new THREE.Mesh(new THREE.BoxGeometry(0.98, 0.088, 0.98), hintMat);
+        toMesh.position.set(toPos.x, 0.007, toPos.z);
+        highlights.add(toMesh);
+
+        // 3D Directional Vector Arrow floating above board
+        const dir = new THREE.Vector3(toPos.x - fromPos.x, 0, toPos.z - fromPos.z);
+        const dist = dir.length();
+        if (dist > 0.1) {
+          dir.normalize();
+          const arrowLength = Math.max(0.4, dist - 0.28);
+          const arrowHelper = new THREE.ArrowHelper(
+            dir,
+            new THREE.Vector3(fromPos.x, 0.2, fromPos.z),
+            arrowLength,
+            0x0ea5e9,
+            0.36,
+            0.24
+          );
+          highlights.add(arrowHelper);
+        }
+      });
+    }
+  }, [selectedSquare, legalMoves, lastMove, isKingInCheck, board, boardToWorld, themeMode, aiHints]);
 
   // Click Handler with Raycaster
   const handleCanvasClick = (event: React.MouseEvent<HTMLDivElement>) => {

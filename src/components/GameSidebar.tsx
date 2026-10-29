@@ -15,7 +15,8 @@ import {
   ScrollText,
   Loader2,
   ChevronRight,
-  Box
+  Box,
+  Sparkles
 } from 'lucide-react';
 
 interface GameSidebarProps {
@@ -42,6 +43,8 @@ interface GameSidebarProps {
   onResign: () => void;
   onOfferDraw: () => void;
   isGameOver: boolean;
+  aiAssistEnabled?: boolean;
+  onToggleAiAssist?: () => void;
 }
 
 export const GameSidebar: React.FC<GameSidebarProps> = ({
@@ -67,7 +70,9 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
   onCopyPGN,
   onResign,
   onOfferDraw,
-  isGameOver
+  isGameOver,
+  aiAssistEnabled = false,
+  onToggleAiAssist
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const logoSrc = themeMode === 'light' ? './kaiwen-logo-dark.png' : './kaiwen-logo-white.png';
@@ -154,6 +159,17 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
           >
             <Box size={15} />
           </button>
+
+          {onToggleAiAssist && (
+            <button
+              type="button"
+              className={`dock-item-btn ${aiAssistEnabled ? 'active' : ''}`}
+              onClick={onToggleAiAssist}
+              data-tooltip={aiAssistEnabled ? 'Yapay Zeka Hamle Desteğini Kapat' : 'Yapay Zeka Hamle Desteğini Aç'}
+            >
+              <Sparkles size={15} />
+            </button>
+          )}
 
           <div className="dock-divider" />
 
@@ -269,6 +285,18 @@ export const GameSidebar: React.FC<GameSidebarProps> = ({
             <Box size={13} />
             <span>{viewMode === '3d' ? '3D' : '2D'}</span>
           </button>
+
+          {onToggleAiAssist && (
+            <button
+              type="button"
+              className={`btn-drawer-tool ${aiAssistEnabled ? 'active' : ''}`}
+              onClick={onToggleAiAssist}
+              title={aiAssistEnabled ? 'AI Hamle Desteğini Kapat' : 'AI Hamle Desteğini Aç'}
+            >
+              <Sparkles size={13} />
+              <span>AI</span>
+            </button>
+          )}
 
           <button
             type="button"

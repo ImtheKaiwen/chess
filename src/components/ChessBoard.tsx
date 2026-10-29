@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef } from 'react';
 import type { Board, Color, Position } from '../engine/types';
 import { PieceIcon } from '../assets/PieceIcons';
 import { FILES, RANKS } from '../engine/constants';
@@ -33,9 +33,11 @@ interface ChessBoardProps {
   isFlipped: boolean;
   theme: string;
   arrow?: BoardArrow | null;
+  arrows?: BoardArrow[];
   bestMoveBadgePosition?: Position | null;
   reviewBadge?: ReviewBadge | null;
   highlightedSquares?: HighlightedSquare[];
+  userDrawingEnabled?: boolean;
   onSquareClick: (row: number, col: number) => void;
 }
 
@@ -49,11 +51,21 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
   isFlipped,
   theme,
   arrow,
+  arrows = [],
   bestMoveBadgePosition,
   reviewBadge,
   highlightedSquares = [],
+  userDrawingEnabled = true,
   onSquareClick
 }) => {
+  const boardRef = useRef<HTMLDivElement>(null);
+
+  // User right-click drawing states (like Chess.com / Lichess)
+  const [userArrows, setUserArrows] = useState<BoardArrow[]>([]);
+  const [userHighlights, setUserHighlights] = useState<Position[]>([]);
+  const [rightClickStart, setRightClickStart] = useState<Position | null>(null);
+  const [dragPreview, setDragPreview] = useState<BoardArrow | null>(null);
+
   // Rendering rows & cols based on board flip
   const rows = isFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
   const cols = isFlipped ? [7, 6, 5, 4, 3, 2, 1, 0] : [0, 1, 2, 3, 4, 5, 6, 7];
@@ -68,8 +80,107 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
     };
   };
 
+  // Convert mouse event coordinates to board Position
+  const getSquareFromMouseEvent = (e: React.MouseEvent): Position | null => {
+    if (!boardRef.current) return null;
+    const rect = boardRef.current.getBoundingClientRect();
+    const relX = e.clientX - rect.left;
+    const relY = e.clientY - rect.top;
+    const colIdx = Math.floor((relX / rect.width) * 8);
+    const rowIdx = Math.floor((relY / rect.height) * 8);
+    if (rowIdx < 0 || rowIdx > 7 || colIdx < 0 || colIdx > 7) return null;
+    const r = isFlipped ? 7 - rowIdx : rowIdx;
+    const c = isFlipped ? 7 - colIdx : colIdx;
+    return { row: r, col: c };
+  };
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (!userDrawingEnabled) return;
+    if (e.button === 2) {
+      // Right click: start drawing arrow / highlighting
+      e.preventDefault();
+      const sq = getSquareFromMouseEvent(e);
+      if (sq) {
+        setRightClickStart(sq);
+      }
+    } else if (e.button === 0) {
+      // Left click: clear all user drawings (standard Chess.com / Lichess behavior)
+      if (userArrows.length > 0) setUserArrows([]);
+      if (userHighlights.length > 0) setUserHighlights([]);
+      setRightClickStart(null);
+      setDragPreview(null);
+    }
+  };
+
+  const handleMouseMove = (e: React.MouseEvent) => {
+    if (!userDrawingEnabled || !rightClickStart) return;
+    const sq = getSquareFromMouseEvent(e);
+    if (sq && (sq.row !== rightClickStart.row || sq.col !== rightClickStart.col)) {
+      setDragPreview({ from: rightClickStart, to: sq, color: '#f59e0b' });
+    } else {
+      setDragPreview(null);
+    }
+  };
+
+  const handleMouseUp = (e: React.MouseEvent) => {
+    if (!userDrawingEnabled) return;
+    if (e.button === 2 && rightClickStart) {
+      e.preventDefault();
+      const sq = getSquareFromMouseEvent(e);
+      if (sq) {
+        if (sq.row === rightClickStart.row && sq.col === rightClickStart.col) {
+          // Toggle square highlight
+          setUserHighlights(prev => {
+            const exists = prev.some(p => p.row === sq.row && p.col === sq.col);
+            if (exists) return prev.filter(p => !(p.row === sq.row && p.col === sq.col));
+            return [...prev, sq];
+          });
+        } else {
+          // Toggle arrow from rightClickStart to sq
+          setUserArrows(prev => {
+            const exists = prev.some(
+              a =>
+                a.from.row === rightClickStart.row &&
+                a.from.col === rightClickStart.col &&
+                a.to.row === sq.row &&
+                a.to.col === sq.col
+            );
+            if (exists) {
+              return prev.filter(
+                a =>
+                  !(
+                    a.from.row === rightClickStart.row &&
+                    a.from.col === rightClickStart.col &&
+                    a.to.row === sq.row &&
+                    a.to.col === sq.col
+                  )
+              );
+            }
+            return [...prev, { from: rightClickStart, to: sq, color: '#f59e0b' }];
+          });
+        }
+      }
+      setRightClickStart(null);
+      setDragPreview(null);
+    }
+  };
+
+  // Combine system arrows + user drawn arrows + active drag preview
+  const allArrows: BoardArrow[] = [
+    ...(arrows.length > 0 ? arrows : arrow ? [arrow] : []),
+    ...userArrows,
+    ...(dragPreview ? [dragPreview] : [])
+  ];
+
   return (
-    <div className={`board-container ${theme}`}>
+    <div
+      ref={boardRef}
+      className={`board-container ${theme}`}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onContextMenu={e => e.preventDefault()}
+    >
       <div className="chessboard-grid">
         {rows.map((r, visualRowIdx) =>
           cols.map((c, visualColIdx) => {
@@ -110,6 +221,9 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
               h => h.position.row === r && h.position.col === c
             );
 
+            // User right-click highlight
+            const isUserHighlighted = userHighlights.some(p => p.row === r && p.col === c);
+
             const showRank = visualColIdx === 0;
             const showFile = visualRowIdx === 7;
             const rankLabel = RANKS[r];
@@ -127,6 +241,9 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
               if (squareHighlight.borderColor) {
                 customSquareStyle.boxShadow = `inset 0 0 0 2.5px ${squareHighlight.borderColor}`;
               }
+            } else if (isUserHighlighted) {
+              customSquareStyle.backgroundColor = 'rgba(245, 158, 11, 0.42)';
+              customSquareStyle.boxShadow = 'inset 0 0 0 2.5px #f59e0b';
             }
 
             // Calculate slide translation offsets for the piece on destination square
@@ -153,7 +270,11 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
                 key={`${r}-${c}`}
                 className={squareClasses}
                 style={customSquareStyle}
-                onClick={() => onSquareClick(r, c)}
+                onClick={() => {
+                  if (userArrows.length > 0) setUserArrows([]);
+                  if (userHighlights.length > 0) setUserHighlights([]);
+                  onSquareClick(r, c);
+                }}
                 data-row={r}
                 data-col={c}
               >
@@ -204,38 +325,28 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
         )}
       </div>
 
-      {/* Recommended Move SVG Arrow Overlay (Slender 7px arrow, L-shape for knight) */}
-      {arrow && (
+      {/* Chess.com / Lichess Style SVG Arrow Overlay (18px wide shaft, bold 42px arrowhead, opacity 0.85) */}
+      {allArrows.length > 0 && (
         <svg
           className="board-arrow-svg-overlay"
           viewBox="0 0 800 800"
           pointerEvents="none"
         >
-          <defs>
-            <marker
-              id="arrowhead-board"
-              markerUnits="userSpaceOnUse"
-              markerWidth="32"
-              markerHeight="32"
-              refX="22"
-              refY="12"
-              orient="auto"
-            >
-              <polygon points="0 4, 22 12, 0 20" fill={arrow.color || '#16a34a'} />
-            </marker>
-          </defs>
-          {(() => {
-            const start = getSquareCenter(arrow.from);
-            const end = getSquareCenter(arrow.to);
+          {allArrows.map((ar, idx) => {
+            const start = getSquareCenter(ar.from);
+            const end = getSquareCenter(ar.to);
 
-            const dCol = arrow.to.col - arrow.from.col;
-            const dRow = arrow.to.row - arrow.from.row;
+            const dCol = ar.to.col - ar.from.col;
+            const dRow = ar.to.row - ar.from.row;
             const isKnight =
               (Math.abs(dCol) === 1 && Math.abs(dRow) === 2) ||
               (Math.abs(dCol) === 2 && Math.abs(dRow) === 1);
 
+            const color = ar.color || '#22c55e';
+            const markerId = `arrowhead-${idx}-${color.replace(/[^a-zA-Z0-9]/g, '')}`;
+
             if (isKnight) {
-              // L-shape arrow for knight
+              // L-shape arrow for knight with perfectly rounded corner
               let cornerX = start.x;
               let cornerY = start.y;
               if (Math.abs(dRow) === 2) {
@@ -247,46 +358,77 @@ export const ChessBoard: React.FC<ChessBoardProps> = ({
               const dx = end.x - cornerX;
               const dy = end.y - cornerY;
               const len = Math.sqrt(dx * dx + dy * dy);
-              const shorten = 22;
+              const shorten = 32;
               const targetX = end.x - (dx / len) * shorten;
               const targetY = end.y - (dy / len) * shorten;
 
               return (
-                <path
-                  d={`M ${start.x} ${start.y} L ${cornerX} ${cornerY} L ${targetX} ${targetY}`}
-                  fill="none"
-                  stroke={arrow.color || '#16a34a'}
-                  strokeWidth="7"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeOpacity="0.9"
-                  markerEnd="url(#arrowhead-board)"
-                />
+                <g key={idx}>
+                  <defs>
+                    <marker
+                      id={markerId}
+                      markerUnits="userSpaceOnUse"
+                      markerWidth="48"
+                      markerHeight="48"
+                      refX="36"
+                      refY="24"
+                      orient="auto"
+                    >
+                      <polygon points="4 6, 40 24, 4 42" fill={color} fillOpacity="0.88" />
+                    </marker>
+                  </defs>
+                  <path
+                    d={`M ${start.x} ${start.y} L ${cornerX} ${cornerY} L ${targetX} ${targetY}`}
+                    fill="none"
+                    stroke={color}
+                    strokeWidth="18"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeOpacity="0.85"
+                    markerEnd={`url(#${markerId})`}
+                  />
+                </g>
               );
             }
 
-            // Diagonal or Straight move (clean, slender 7px line)
+            // Diagonal or Straight move (Chess.com robust 18px line with bold arrowhead)
             const dx = end.x - start.x;
             const dy = end.y - start.y;
             const dist = Math.sqrt(dx * dx + dy * dy);
-            const shorten = 22;
+            if (dist === 0) return null;
+            const shorten = 32;
             const targetX = end.x - (dx / dist) * shorten;
             const targetY = end.y - (dy / dist) * shorten;
 
             return (
-              <line
-                x1={start.x}
-                y1={start.y}
-                x2={targetX}
-                y2={targetY}
-                stroke={arrow.color || '#16a34a'}
-                strokeWidth="7"
-                strokeLinecap="round"
-                strokeOpacity="0.9"
-                markerEnd="url(#arrowhead-board)"
-              />
+              <g key={idx}>
+                <defs>
+                  <marker
+                    id={markerId}
+                    markerUnits="userSpaceOnUse"
+                    markerWidth="48"
+                    markerHeight="48"
+                    refX="36"
+                    refY="24"
+                    orient="auto"
+                  >
+                    <polygon points="4 6, 40 24, 4 42" fill={color} fillOpacity="0.88" />
+                  </marker>
+                </defs>
+                <line
+                  x1={start.x}
+                  y1={start.y}
+                  x2={targetX}
+                  y2={targetY}
+                  stroke={color}
+                  strokeWidth="18"
+                  strokeLinecap="round"
+                  strokeOpacity="0.85"
+                  markerEnd={`url(#${markerId})`}
+                />
+              </g>
             );
-          })()}
+          })}
         </svg>
       )}
     </div>

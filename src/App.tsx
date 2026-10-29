@@ -10,7 +10,13 @@ import {
 } from './engine/chessEngine';
 import { calculateCaptured, boardToFEN, movesToPGN, copyToClipboard } from './utils/helpers';
 import { sound } from './utils/sound';
-import { fetchStockfishMove, getLocalFallbackMove, DIFFICULTY_CONFIG } from './services/aiService';
+import {
+  fetchStockfishMove,
+  getLocalFallbackMove,
+  getTopMovesSuggestions,
+  DIFFICULTY_CONFIG
+} from './services/aiService';
+import type { AIDifficulty } from './services/aiService';
 import {
   getPlayerStats,
   recordGameResult,
@@ -26,6 +32,7 @@ import { SplashScreen } from './components/SplashScreen';
 import { StartScreen } from './components/StartScreen';
 import type { GameSettings } from './components/StartScreen';
 import { ChessBoard } from './components/ChessBoard';
+import type { BoardArrow } from './components/ChessBoard';
 import { ThreeChessBoard } from './components/ThreeChessBoard';
 import { PlayerCard } from './components/PlayerCard';
 import { GameSidebar } from './components/GameSidebar';
@@ -131,6 +138,18 @@ export const App: React.FC = () => {
     mode: 'ai'
   });
 
+  // AI Move Assistance Settings
+  const [aiAssistEnabled, setAiAssistEnabled] = useState<boolean>(() => {
+    return localStorage.getItem('kaiwen_ai_assist_enabled') === 'true';
+  });
+  const [aiAssistLevel, setAiAssistLevel] = useState<AIDifficulty>(() => {
+    return (localStorage.getItem('kaiwen_ai_assist_level') as AIDifficulty) || 'master';
+  });
+  const [aiAssistCount, setAiAssistCount] = useState<1 | 2>(() => {
+    return (parseInt(localStorage.getItem('kaiwen_ai_assist_count') || '1', 10) as 1 | 2) || 1;
+  });
+  const [aiHintArrows, setAiHintArrows] = useState<BoardArrow[]>([]);
+
   // Sound & Toasts
   const [isMuted, setIsMuted] = useState<boolean>(() => sound.isMuted());
   const [toasts, setToasts] = useState<ToastMessage[]>([]);
@@ -164,6 +183,86 @@ export const App: React.FC = () => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, 2500);
   }, []);
+
+  // AI Assist Handlers
+  const handleToggleAiAssist = (val?: boolean) => {
+    const nextVal = typeof val === 'boolean' ? val : !aiAssistEnabled;
+    setAiAssistEnabled(nextVal);
+    localStorage.setItem('kaiwen_ai_assist_enabled', String(nextVal));
+    addToast(
+      nextVal ? 'Yapay Zeka Hamle Desteği Aktif' : 'Yapay Zeka Hamle Desteği Kapatıldı',
+      'info'
+    );
+  };
+
+  const handleChangeAiAssistLevel = (lvl: AIDifficulty) => {
+    setAiAssistLevel(lvl);
+    localStorage.setItem('kaiwen_ai_assist_level', lvl);
+  };
+
+  const handleChangeAiAssistCount = (cnt: 1 | 2) => {
+    setAiAssistCount(cnt);
+    localStorage.setItem('kaiwen_ai_assist_count', String(cnt));
+  };
+
+  // Dynamic AI Move Assistance calculation
+  useEffect(() => {
+    if (!aiAssistEnabled || currentScreen !== 'game' || (status !== 'active' && status !== 'check')) {
+      setAiHintArrows([]);
+      return;
+    }
+
+    if (gameSettings.mode === 'ai' && currentTurn !== humanColor) {
+      setAiHintArrows([]);
+      return;
+    }
+
+    if (isAiThinking) {
+      setAiHintArrows([]);
+      return;
+    }
+
+    let isMounted = true;
+    const computeHints = async () => {
+      try {
+        const fen = boardToFEN(board, currentTurn, enPassantTarget, moveHistory);
+        const hints = await getTopMovesSuggestions(
+          fen,
+          aiAssistLevel,
+          board,
+          currentTurn,
+          enPassantTarget,
+          aiAssistCount
+        );
+        if (isMounted) {
+          setAiHintArrows(hints);
+        }
+      } catch {
+        if (isMounted) {
+          setAiHintArrows([]);
+        }
+      }
+    };
+
+    computeHints();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [
+    aiAssistEnabled,
+    currentScreen,
+    board,
+    currentTurn,
+    status,
+    enPassantTarget,
+    moveHistory,
+    humanColor,
+    gameSettings.mode,
+    isAiThinking,
+    aiAssistLevel,
+    aiAssistCount
+  ]);
 
   // Timer Tick
   useEffect(() => {
@@ -777,6 +876,7 @@ export const App: React.FC = () => {
                     isKingInCheck={isChecked}
                     isFlipped={isFlipped}
                     themeMode={themeMode}
+                    aiHints={aiHintArrows}
                     onSquareClick={handleSquareClick}
                   />
                 ) : (
@@ -789,6 +889,7 @@ export const App: React.FC = () => {
                     isKingInCheck={isChecked}
                     isFlipped={isFlipped}
                     theme="theme-default"
+                    arrows={aiHintArrows}
                     onSquareClick={handleSquareClick}
                   />
                 )}
@@ -852,6 +953,8 @@ export const App: React.FC = () => {
               onResign={handleResign}
               onOfferDraw={handleOfferDraw}
               isGameOver={status !== 'active' && status !== 'check'}
+              aiAssistEnabled={aiAssistEnabled}
+              onToggleAiAssist={handleToggleAiAssist}
             />
           </div>
         </div>
@@ -881,6 +984,7 @@ export const App: React.FC = () => {
         <GameOverModal
           status={status}
           winner={winner}
+          lang={lang}
           totalMoves={moveHistory.length}
           gameDuration={
             gameSettings.timeLimit > 0
@@ -926,12 +1030,19 @@ export const App: React.FC = () => {
         onToggleSound={handleToggleSound}
         viewMode={viewMode}
         onToggleViewMode={setViewMode}
+        aiAssistEnabled={aiAssistEnabled}
+        onToggleAiAssist={handleToggleAiAssist}
+        aiAssistLevel={aiAssistLevel}
+        onChangeAiAssistLevel={handleChangeAiAssistLevel}
+        aiAssistCount={aiAssistCount}
+        onChangeAiAssistCount={handleChangeAiAssistCount}
       />
 
       {/* Match History Modal */}
       <MatchHistoryModal
         isOpen={showHistoryModal}
         onClose={() => setShowHistoryModal(false)}
+        lang={lang}
         history={matchHistory}
         onRefresh={() => setMatchHistory(getMatchHistory())}
         onClear={handleClearHistory}

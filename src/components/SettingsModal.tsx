@@ -1,7 +1,8 @@
 import React from 'react';
-import { X, Box, Globe, Moon, Sun, Volume2, VolumeX, Keyboard } from 'lucide-react';
+import { X, Box, Globe, Moon, Sun, Volume2, VolumeX, Keyboard, Sparkles } from 'lucide-react';
 import type { Language } from '../utils/i18n';
 import { translations } from '../utils/i18n';
+import type { AIDifficulty } from '../services/aiService';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -14,6 +15,12 @@ interface SettingsModalProps {
   onToggleSound: () => void;
   viewMode: '2d' | '3d';
   onToggleViewMode: (mode: '2d' | '3d') => void;
+  aiAssistEnabled?: boolean;
+  onToggleAiAssist?: (enabled: boolean) => void;
+  aiAssistLevel?: AIDifficulty;
+  onChangeAiAssistLevel?: (level: AIDifficulty) => void;
+  aiAssistCount?: 1 | 2;
+  onChangeAiAssistCount?: (count: 1 | 2) => void;
 }
 
 export const SettingsModal: React.FC<SettingsModalProps> = ({
@@ -26,10 +33,16 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
   isMuted,
   onToggleSound,
   viewMode,
-  onToggleViewMode
+  onToggleViewMode,
+  aiAssistEnabled = false,
+  onToggleAiAssist,
+  aiAssistLevel = 'master',
+  onChangeAiAssistLevel,
+  aiAssistCount = 1,
+  onChangeAiAssistCount
 }) => {
   if (!isOpen) return null;
-  const t = translations[lang];
+  const t = translations[lang] || translations.tr;
 
   return (
     <div className="modal-backdrop" onClick={onClose}>
@@ -86,6 +99,82 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({
                 </button>
               </div>
             </div>
+          </div>
+
+          {/* AI Move Assistance Section */}
+          <div className="settings-section">
+            <div className="settings-row">
+              <div className="settings-label-group">
+                <div className="settings-icon-pill">
+                  <Sparkles size={16} />
+                </div>
+                <div>
+                  <span className="settings-label-title">{t.aiAssist}</span>
+                  <p className="settings-label-desc">{t.aiAssistDesc}</p>
+                </div>
+              </div>
+
+              <div className="settings-pill-toggle">
+                <button
+                  type="button"
+                  className={`pill-btn ${aiAssistEnabled ? 'active' : ''}`}
+                  onClick={() => onToggleAiAssist?.(true)}
+                >
+                  {t.on}
+                </button>
+                <button
+                  type="button"
+                  className={`pill-btn ${!aiAssistEnabled ? 'active' : ''}`}
+                  onClick={() => onToggleAiAssist?.(false)}
+                >
+                  {t.off}
+                </button>
+              </div>
+            </div>
+
+            {aiAssistEnabled && (
+              <div style={{ marginTop: '0.85rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+                <div className="settings-row">
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    {t.aiAssistLevel}:
+                  </span>
+                  <div className="settings-pill-toggle">
+                    {(['easy', 'medium', 'hard', 'master'] as AIDifficulty[]).map(lvl => (
+                      <button
+                        key={lvl}
+                        type="button"
+                        className={`pill-btn ${aiAssistLevel === lvl ? 'active' : ''}`}
+                        onClick={() => onChangeAiAssistLevel?.(lvl)}
+                      >
+                        {t[lvl]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="settings-row">
+                  <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>
+                    {t.aiAssistMoves}:
+                  </span>
+                  <div className="settings-pill-toggle">
+                    <button
+                      type="button"
+                      className={`pill-btn ${aiAssistCount === 1 ? 'active' : ''}`}
+                      onClick={() => onChangeAiAssistCount?.(1)}
+                    >
+                      {t.bestMoveOnly}
+                    </button>
+                    <button
+                      type="button"
+                      className={`pill-btn ${aiAssistCount === 2 ? 'active' : ''}`}
+                      onClick={() => onChangeAiAssistCount?.(2)}
+                    >
+                      {t.top2Moves}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Language Toggle */}
